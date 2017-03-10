@@ -1,7 +1,8 @@
 var VERSION = "0.0.1";
 
+var gl;
+
 function SimpleOekaki(div){
-  var gl;
   var canvas;
 
   var canvasFBO;
@@ -62,18 +63,6 @@ function SimpleOekaki(div){
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   }
-  var getShader = function(str, type) {
-	var shader = gl.createShader(type);
-	gl.shaderSource(shader, str);
-	gl.compileShader(shader);
-	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-	  console.log("JS:Shader compile failed");
-	  console.log(gl.getShaderInfoLog(shader));
-	  return null;
-	}
-	return shader;
-  }
-
   var initBuffers = function(){
 	var canvasBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER,canvasBuffer);
@@ -114,30 +103,8 @@ function SimpleOekaki(div){
   }
 
   var initShaders = function(){
-
-	var v_sh = "attribute vec2 position;\n\
-uniform vec2 screenResolution;\n\
-uniform vec2 mousePosition;\n\
-uniform float size;\n\
-void main(){\n\
-  vec2 scaledPosition = position * size - size/2.0;\n\
-  vec2 movedPosition = mousePosition + vec2(0.5, 0.5) + scaledPosition;\n\
-  vec2 pos = 2.0 * movedPosition / screenResolution - 1.0;\n\
-  gl_Position = vec4(pos.x, -pos.y, 0.0, 1.0);\n\
-}"
-	var f_sh = "uniform highp vec2 screenResolution;\n\
-uniform highp vec2 mousePosition;\n\
-uniform highp float size;\n\
-void main(void)\n\
-{\n\
-  highp vec2 pos = vec2(gl_FragCoord.x, screenResolution.y - gl_FragCoord.y);\n\
-  highp float dist = distance(mousePosition + 0.5, pos);\n\
-  if (dist > size/2.0 - 0.2) discard;\n\
-  gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n\
-}"
-	console.log("vertexshader",gl.VERTEX_SHADER);
-	var vertexShader = getShader(v_sh , gl.VERTEX_SHADER);
-	var fragmentShader = getShader(f_sh , gl.FRAGMENT_SHADER);
+	var vertexShader = getShader(vertSource1 , gl.VERTEX_SHADER);
+	var fragmentShader = getShader(fragSource1 , gl.FRAGMENT_SHADER);
 	shaderProgram = gl.createProgram();
 	gl.attachShader(shaderProgram, vertexShader);
 	gl.attachShader(shaderProgram, fragmentShader);
@@ -154,21 +121,8 @@ void main(void)\n\
 	vertexMousePositionUniform= gl.getUniformLocation(shaderProgram,"mousePosition");
 	vertexSizeUniform= gl.getUniformLocation(shaderProgram,"size");
 
-	var v_sh2 = "attribute vec2 position;\n\
-varying vec2 Texcoord;\n\
-void main(void) {\n\
-  Texcoord = (position+1.0) / 2.0;\n\
-  gl_Position = vec4(position, 0.0, 1.0);\n\
-}";
-
-	var f_sh2 = " varying highp vec2 Texcoord;\n\
-uniform highp sampler2D imageTex;\n\
-void main(void){\n\
-  highp vec4 texColor = texture2D(imageTex,Texcoord);\n\
-  gl_FragColor = texColor;\n\
-}";
-	var vertexShader2 = getShader(v_sh2 , gl.VERTEX_SHADER);
-	var fragmentShader2 = getShader(f_sh2 , gl.FRAGMENT_SHADER);
+	var vertexShader2 = getShader(vertSource2 , gl.VERTEX_SHADER);
+	var fragmentShader2 = getShader(fragSource2 , gl.FRAGMENT_SHADER);
 	shaderProgram2 = gl.createProgram();
 	gl.attachShader(shaderProgram2, vertexShader2);
 	gl.attachShader(shaderProgram2, fragmentShader2);
@@ -188,7 +142,7 @@ void main(void){\n\
 	gl.viewport(0, 0, canvas.width, canvas.height);
 
 	// Initialize the shader program
-	initShaders();
+	getShaders().then(initShaders);
 	initBuffers();
 	setInterval(paintGL,15)
   }

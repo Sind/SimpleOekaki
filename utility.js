@@ -8,7 +8,7 @@ function getShaders() {
 
     // barrier for catching async loading of shaders :)
     var barrier = {
-      limit: 2,
+      limit: 4,
       current: 0,
       hit: function() {
         this.current += 1;
@@ -25,51 +25,22 @@ function getShaders() {
     }.init();
 
     // fetch shaders
-
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "shaders/shader1.frag");
-    xhr.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        fragSource1 = this.responseText;
-        barrier.hit();
-      }
-    };
-    xhr.send();
-
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "shaders/shader2.frag");
-    xhr.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        fragSource2 = this.responseText;
-        barrier.hit();
-      }
-    };
-    xhr.send();
-
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "shaders/shader1.vert");
-    xhr.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        vertSource1 = this.responseText;
-        barrier.hit();
-      }
-    };
-    xhr.send();
-
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "shaders/shader2.vert");
-    xhr.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        vertSource2 = this.responseText;
-        barrier.hit();
-      }
-    };
-    xhr.send();
-
-    sendShaderGet("shader1.frag").then(barrier.hit);
-    sendShaderGet("shader2.frag").then(barrier.hit);
-    sendShaderGet("shader1.vert").then(barrier.hit);
-    sendShaderGet("shader2.vert").then(barrier.hit);
+    sendShaderGet("1.frag").then(function(value) {
+      fragSource1 = value;
+      barrier.hit();
+    });
+    sendShaderGet("2.frag").then(function(value) {
+      fragSource2 = value;
+      barrier.hit();
+    });
+    sendShaderGet("1.vert").then(function(value) {
+      vertSource1 = value;
+      barrier.hit();
+    });
+    sendShaderGet("2.vert").then(function(value) {
+      vertSource2 = value;
+      barrier.hit();
+    });
   });
 }
 
@@ -84,4 +55,16 @@ function sendShaderGet( shaderName ){
     };
     xhr.send();
   });
+}
+
+var getShader = function(shaderSource, type) {
+  var shader = gl.createShader(type);
+  gl.shaderSource(shader, shaderSource);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+	console.log("JS:Shader compile failed");
+	console.log(gl.getShaderInfoLog(shader));
+	return null;
+  }
+  return shader;
 }
