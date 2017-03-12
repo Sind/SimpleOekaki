@@ -1,4 +1,4 @@
-var VERSION = "0.0.1";
+var VERSION = "0.0.2";
 
 
 function SimpleOekaki(div){
@@ -228,6 +228,32 @@ void main(void){\n\
 			paintLine(currentMousePos.x,currentMousePos.y,nextPos.x,nextPos.y);
 			currentMousePos = nextPos;
 			moveEvent.preventDefault();
+		});
+
+		canvas.addEventListener('touchstart', function(startEvent){
+			offset  = getOffset(canvas);
+			currentMousePos = {
+				x: startEvent.changedTouches[0].pageX - offset.left,
+				y: startEvent.changedTouches[0].pageY - offset.top
+			}
+			isDown = true;
+
+		});
+		document.addEventListener('touchend', function(startEvent){
+			isDown = false;
+		});
+		canvas.addEventListener('touchmove', function(moveEvent){
+			if(!isDown) return
+			moveEvent.preventDefault();
+			nextPos = {
+				x: moveEvent.changedTouches[0].pageX - offset.left,
+				y: moveEvent.changedTouches[0].pageY - offset.top
+			}
+			paintLine(currentMousePos.x,currentMousePos.y,nextPos.x,nextPos.y);
+			currentMousePos = nextPos;
+            moveEvent.stopPropagation();
+        	moveEvent.cancelBubble = true;
+
 		});
 	}
 
