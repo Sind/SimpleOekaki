@@ -1,25 +1,33 @@
 var VERSION = "0.0.2";
 
+var MIN_BRUSH_SIZE = 1;
+var MAX_BRUSH_SIZE = 31;
+var DEFAULT_BRUSH_SIZE = 3;
 
 function SimpleOekaki(div){
-	var gl;
-	var canvas;
 
+	var instance = this;
+	// webgl
+	var gl;
 	var canvasFBO;
 	var canvasTexture;
-
 	var shaderProgram;
 	var shaderProgram2;
-	
 	var vertexPositionAttribute;
 	var vertexPositionAttribute2;
-	
 	var vertexScreenResolutionUniform;
 	var vertexMousePositionUniform;
 	var vertexSizeUniform;
 
-	var diameter = 9;
+	//html
+	var holder;
+	var canvas;
+	var size_slider;
+	var dec_size_button;
+	var inc_size_button;
 
+	//drawing state
+	var diameter = DEFAULT_BRUSH_SIZE;
 	var backgroundColor = [1,1,1];
 	var layers = [
 		{
@@ -50,7 +58,7 @@ function SimpleOekaki(div){
 
 	var paintLine = function(x0, y0, x1, y1){
 		var dist = Math.sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1))
-		for (var i = 1/dist; i <= 1.0; i+= 1/dist){
+		for (var i = 0.5/dist; i <= 1.0; i+=0.5/dist){
 			var x = x0*i + x1*(1-i)
 			var y = y0*i + y1*(1-i)
 			paintCircle(x,y)
@@ -195,6 +203,28 @@ void main(void){\n\
 		setInterval(paintGL,15)
 	}
 
+	this.set_brush_size = function(size){
+		if(size == diameter) return;
+		diameter = size;
+		if(diameter < MIN_BRUSH_SIZE){
+			diameter = MIN_BRUSH_SIZE;
+		}
+		if(diameter > MAX_BRUSH_SIZE){
+			diameter = MAX_BRUSH_SIZE;
+		}
+		console.log("brush size changed to",diameter);
+		size_slider.value = diameter;
+	}
+
+	this.dec_brush_size = function(){
+		instance.set_brush_size(diameter-2);
+	}
+
+	this.inc_brush_size = function(){
+		instance.set_brush_size(diameter+2);
+
+	}
+
 	var setInputCallbacks = function(){
 
 	    var offset;
@@ -255,6 +285,15 @@ void main(void){\n\
         	moveEvent.cancelBubble = true;
 
 		});
+		dec_size_button.addEventListener('click', function(){
+			instance.dec_brush_size();
+		});
+		inc_size_button.addEventListener('click', function(){
+			instance.inc_brush_size();
+		});
+		size_slider.addEventListener('change', function(){
+			instance.set_brush_size(parseInt(size_slider.value));
+		})
 	}
 
 	this.version = function(){
@@ -265,10 +304,26 @@ void main(void){\n\
 		throw "You must provide a div as input parameter."
 		return;
 	}
+	holder = document.createElement('div');
 	canvas = document.createElement("canvas");
+	inc_size_button = document.createElement('button');
+	dec_size_button = document.createElement('button');
+	inc_size_button.innerHTML = "increase brush";
+	dec_size_button.innerHTML = "decrease brush";
+	size_slider = document.createElement("INPUT");
+	size_slider.setAttribute("type", "range");
+	size_slider.min = MIN_BRUSH_SIZE;
+	size_slider.max = MAX_BRUSH_SIZE;
+	size_slider.step = 2;
+	size_slider.value = DEFAULT_BRUSH_SIZE;
+
 	canvas.height = 800;
 	canvas.width = 800;
-	div.appendChild(canvas);
+	div.appendChild(holder);
+	holder.appendChild(dec_size_button);
+	holder.appendChild(size_slider);
+	holder.appendChild(inc_size_button);
+	holder.appendChild(canvas);
 	// Initialize the GL context
 	initializeGL();
 	if (!gl) {
