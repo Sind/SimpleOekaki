@@ -1,4 +1,4 @@
-var VERSION = "0.0.3";
+var VERSION = "0.0.4";
 
 var MIN_BRUSH_SIZE = 1;
 var MAX_BRUSH_SIZE = 31;
@@ -47,13 +47,21 @@ function SimpleOekaki(div){
 	}
 
 	var paintLine = function(x0, y0, x1, y1){
-		var dist = Math.sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1))
-		for (var i = 0.5/dist; i <= 1.0; i+=0.5/dist){
-			var x = x0*i + x1*(1-i)
-			var y = y0*i + y1*(1-i)
-			paintCircle(x,y)
+		var dx = Math.abs(x1-x0);
+		var dy = Math.abs(y1-y0);
+		var sx = (x0 < x1) ? 1 : -1;
+		var sy = (y0 < y1) ? 1 : -1;
+		var err = dx-dy;
+
+		while(true){
+			paintCircle(x0,y0);
+			if ((x0==x1) && (y0==y1)) break;
+			var e2 = 2*err;
+			if (e2 >-dy){ err -= dy; x0  += sx; }
+			if (e2 < dx){ err += dx; y0  += sy; }
 		}
 	}
+
 	var paintGL = function(){
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.useProgram(shaderProgram2);
