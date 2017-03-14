@@ -1,4 +1,4 @@
-var VERSION = "0.0.6";
+var VERSION = "0.0.7";
 
 var MIN_BRUSH_SIZE = 1;
 var MAX_BRUSH_SIZE = 31;
@@ -18,9 +18,11 @@ function SimpleOekaki(div){
 	var shaderProgram2;
 	var vertexPositionAttribute;
 	var vertexPositionAttribute2;
-	var vertexScreenResolutionUniform;
-	var vertexMousePositionUniform;
-	var vertexSizeUniform;
+	// var vertexScreenResolutionUniform;
+	// var vertexMousePositionUniform;
+	// var vertexSizeUniform;
+	var fragmentSizeUniform;
+	var fragmentLineUniform;
 	var fragmentBackgroundColorUniform;
 	var fragmentLayerOrderUniform;
 	var fragmentLayerColorsUniform;
@@ -41,22 +43,27 @@ function SimpleOekaki(div){
 	var layerColors = [DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR];
 	var layerVisibility = [1, 1, 1];
 
-	var paintCircle = function(mouseX, mouseY){
-		gl.useProgram(shaderProgram);
-		gl.bindFramebuffer(gl.FRAMEBUFFER, canvasFBO);
-		gl.uniform2f(vertexScreenResolutionUniform, canvas.width,canvas.height);
-		gl.uniform2f(vertexMousePositionUniform, mouseX,mouseY);
-		gl.uniform1f(vertexSizeUniform, diameter);
-		gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-	}
+	// var paintCircle = function(mouseX, mouseY){
+		// gl.useProgram(shaderProgram);
+		// gl.bindFramebuffer(gl.FRAMEBUFFER, canvasFBO);
+		// gl.uniform2f(vertexScreenResolutionUniform, canvas.width,canvas.height);
+		// gl.uniform2f(vertexMousePositionUniform, mouseX,mouseY);
+		// gl.uniform1f(vertexSizeUniform, diameter);
+		// gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+	// }
 
 	var paintLine = function(x0, y0, x1, y1){
-		var dist = Math.sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1))
-		for (var i = 0.5/dist; i <= 1.0; i+=0.5/dist){
-			var x = x0*i + x1*(1-i)
-			var y = y0*i + y1*(1-i)
-			paintCircle(x,y)
-		}
+		// var dist = Math.sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1))
+		// for (var i = 0.5/dist; i <= 1.0; i+=0.5/dist){
+		// 	var x = x0*i + x1*(1-i)
+		// 	var y = y0*i + y1*(1-i)
+		// 	paintCircle(x,y)
+		// }
+		gl.useProgram(shaderProgram);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, canvasFBO);
+		gl.uniform4f(fragmentLineUniform, Math.round(x0)+.5,800-Math.round(y0)+.5,Math.round(x1)+.5,800-Math.round(y1)+.5);
+		gl.uniform1f(fragmentSizeUniform, diameter);
+		gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 	}
 
 	var paintGL = function(){
@@ -124,27 +131,68 @@ function SimpleOekaki(div){
 
 	var initShaders = function(){
 
-		var v_sh = "attribute vec2 position;\n\
-uniform vec2 screenResolution;\n\
-uniform vec2 mousePosition;\n\
-uniform float size;\n\
-void main(){\n\
-  vec2 scaledPosition = position * size - size/2.0;\n\
-  vec2 movedPosition = mousePosition + vec2(0.5, 0.5) + scaledPosition;\n\
-  vec2 pos = 2.0 * movedPosition / screenResolution - 1.0;\n\
-  gl_Position = vec4(pos.x, -pos.y, 0.0, 1.0);\n\
-}";
+// 		var v_sh = "attribute vec2 position;\n\
+// uniform vec2 screenResolution;\n\
+// uniform vec2 mousePosition;\n\
+// uniform float size;\n\
+// void main(){\n\
+//   vec2 scaledPosition = position * size - size/2.0;\n\
+//   vec2 movedPosition = mousePosition + vec2(0.5, 0.5) + scaledPosition;\n\
+//   vec2 pos = 2.0 * movedPosition / screenResolution - 1.0;\n\
+//   gl_Position = vec4(pos.x, -pos.y, 0.0, 1.0);\n\
+// }";
 
-		var f_sh = "uniform highp vec2 screenResolution;\n\
-uniform highp vec2 mousePosition;\n\
-uniform highp float size;\n\
-void main(void)\n\
-{\n\
-  highp vec2 pos = vec2(gl_FragCoord.x, screenResolution.y - gl_FragCoord.y);\n\
-  highp float dist = distance(mousePosition + 0.5, pos);\n\
-  if (dist > size/2.0 - 0.2) discard;\n\
-  gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n\
+// 		var f_sh = "uniform highp vec2 screenResolution;\n\
+// uniform highp vec2 mousePosition;\n\
+// uniform highp float size;\n\
+// void main(void)\n\
+// {\n\
+//   highp vec2 pos = vec2(gl_FragCoord.x, screenResolution.y - gl_FragCoord.y);\n\
+//   highp float dist = distance(mousePosition + 0.5, pos);\n\
+//   if (dist > size/2.0 - 0.2) discard;\n\
+//   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n\
+// }";
+	
+		var v_sh = "attribute vec2 position; \n\
+varying vec2 Texcoord; \n\
+void main(void) { \n\
+  Texcoord = (position+1.0) / 2.0; \n\
+  gl_Position = vec4(position, 0.0, 1.0); \n\
 }";
+		var f_sh = "precision highp float;\n\
+\n\
+uniform vec4 line;\n\
+\n\
+uniform float size;\n\
+\n\
+void main(void){\n\
+  float x = gl_FragCoord.x;\n\
+  float y = gl_FragCoord.y;\n\
+\n\
+  float x1 = line[0];\n\
+  float y1 = line[1];\n\
+  float x2 = line[2];\n\
+  float y2 = line[3];\n\
+  float tx = (x - x1) / (x2 - x1);\n\
+  float ty = (y - y1) / (y2 - y1);\n\
+  float dx = abs((x1 + ty * (x2 - x1)) - x);\n\
+  float dy = abs((y1 + tx * (y2 - y1)) - y);\n\
+\n\
+  float d = (abs(x2 - x1) < abs(y2 - y1)) ? dx : dy;\n\
+  float t = (abs(x2 - x1) < abs(y2 - y1)) ? ty : tx;\n\
+  t = (x1 == x2 && y1 == y2) ? -1.0 : t;\n\
+\n\
+  if(t < 0.0){\n\
+    d = abs(x1 - x) + abs(y1 - y);\n\
+  }else if(t > 1.0){\n\
+    d = abs(x2 - x) + abs(y2 - y);\n\
+  }\n\
+\n\
+  if(d > size/2.0) discard;\n\
+\n\
+  gl_FragColor = vec4(1.0,1.0,1.0,1.0);\n\
+}"
+
 		console.log("vertexshader",gl.VERTEX_SHADER);
 		var vertexShader = getShader(v_sh , gl.VERTEX_SHADER);
 		var fragmentShader = getShader(f_sh , gl.FRAGMENT_SHADER);
@@ -160,9 +208,10 @@ void main(void)\n\
 		vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "position");
 		gl.enableVertexAttribArray(vertexPositionAttribute);
 
-		vertexScreenResolutionUniform = gl.getUniformLocation(shaderProgram,"screenResolution");
-		vertexMousePositionUniform= gl.getUniformLocation(shaderProgram,"mousePosition");
-		vertexSizeUniform= gl.getUniformLocation(shaderProgram,"size");
+		// vertexScreenResolutionUniform = gl.getUniformLocation(shaderProgram,"screenResolution");
+		// vertexMousePositionUniform= gl.getUniformLocation(shaderProgram,"mousePosition");
+		fragmentLineUniform = gl.getUniformLocation(shaderProgram,"line");
+		fragmentSizeUniform = gl.getUniformLocation(shaderProgram,"size");
 
 		var v_sh2 = "attribute vec2 position; \n\
 varying vec2 Texcoord; \n\
@@ -273,6 +322,7 @@ void main(void){ \n\
 
 		canvas.addEventListener('mousedown', function (startEvent) {
 			currentMousePos = getMouse(startEvent);
+			paintLine(currentMousePos.x,currentMousePos.y,currentMousePos.x,currentMousePos.y);
 			isDown = true;
 
 		});
@@ -289,6 +339,7 @@ void main(void){ \n\
 
 		canvas.addEventListener('touchstart', function(startEvent){
 			currentMousePos = getMouse(startEvent.targetTouches[0]);
+			paintLine(currentMousePos.x,currentMousePos.y,currentMousePos.x,currentMousePos.y);
 			isDown = true;
 
 		});
