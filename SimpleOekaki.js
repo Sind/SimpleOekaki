@@ -1,4 +1,4 @@
-var VERSION = "0.0.5";
+var VERSION = "0.0.6";
 
 var MIN_BRUSH_SIZE = 1;
 var MAX_BRUSH_SIZE = 31;
@@ -51,18 +51,11 @@ function SimpleOekaki(div){
 	}
 
 	var paintLine = function(x0, y0, x1, y1){
-		var dx = Math.abs(x1-x0);
-		var dy = Math.abs(y1-y0);
-		var sx = (x0 < x1) ? 1 : -1;
-		var sy = (y0 < y1) ? 1 : -1;
-		var err = dx-dy;
-
-		while(true){
-			paintCircle(x0,y0);
-			if ((x0==x1) && (y0==y1)) break;
-			var e2 = 2*err;
-			if (e2 >-dy){ err -= dy; x0  += sx; }
-			if (e2 < dx){ err += dx; y0  += sy; }
+		var dist = Math.sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1))
+		for (var i = 0.5/dist; i <= 1.0; i+=0.5/dist){
+			var x = x0*i + x1*(1-i)
+			var y = y0*i + y1*(1-i)
+			paintCircle(x,y)
 		}
 	}
 
@@ -270,58 +263,44 @@ void main(void){ \n\
 
 	var setInputCallbacks = function(){
 
-	    var offset;
-	    var isDown;
-	    var getOffset = function(el) {
-			var rect = el.getBoundingClientRect(),
-			scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
-			scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-			return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+		var isDown;
+		var getMouse = function(e) {
+		  var bbox = canvas.getBoundingClientRect();
+		  var mx = e.clientX - bbox.left * (canvas.width / bbox.width);
+		  var my = e.clientY - bbox.top * (canvas.height / bbox.height);
+		  return {x:mx, y:my}
 		}
 
-
-	    canvas.addEventListener('mousedown', function (startEvent) {
-			offset  = getOffset(canvas);
-			currentMousePos = {
-				x: startEvent.pageX - offset.left,
-				y: startEvent.pageY - offset.top
-			}
+		canvas.addEventListener('mousedown', function (startEvent) {
+			currentMousePos = getMouse(startEvent);
 			isDown = true;
 
 		});
-		document.addEventListener('mouseup', function(startEvent){
+		document.addEventListener('mouseup', function(stopEvent){
 			isDown = false;
 		});
 		document.addEventListener('mousemove', function (moveEvent) {
 			if(!isDown) return
-			nextPos = {
-				x: moveEvent.pageX - offset.left,
-				y: moveEvent.pageY - offset.top
-			}
+			nextPos = getMouse(moveEvent);
 			paintLine(currentMousePos.x,currentMousePos.y,nextPos.x,nextPos.y);
 			currentMousePos = nextPos;
 			moveEvent.preventDefault();
 		});
 
 		canvas.addEventListener('touchstart', function(startEvent){
-			offset  = getOffset(canvas);
-			currentMousePos = {
-				x: startEvent.changedTouches[0].pageX - offset.left,
-				y: startEvent.changedTouches[0].pageY - offset.top
-			}
+			currentMousePos = getMouse(startEvent.targetTouches[0]);
 			isDown = true;
 
 		});
-		document.addEventListener('touchend', function(startEvent){
+		document.addEventListener('touchend', function(stopEvent){
 			isDown = false;
 		});
 		canvas.addEventListener('touchmove', function(moveEvent){
 			if(!isDown) return
 			moveEvent.preventDefault();
-			nextPos = {
-				x: moveEvent.changedTouches[0].pageX - offset.left,
-				y: moveEvent.changedTouches[0].pageY - offset.top
-			}
+
+			nextPos = getMouse(moveEvent.targetTouches[0]);
+
 			paintLine(currentMousePos.x,currentMousePos.y,nextPos.x,nextPos.y);
 			currentMousePos = nextPos;
             moveEvent.stopPropagation();
