@@ -1,8 +1,11 @@
-var VERSION = "0.0.2";
+var VERSION = "0.0.3";
 
 var MIN_BRUSH_SIZE = 1;
 var MAX_BRUSH_SIZE = 31;
 var DEFAULT_BRUSH_SIZE = 3;
+
+var DEFAULT_BACKGROUND_COLOR = [1, 1, 1];
+var DEFAULT_LAYER_COLOR = [0, 0, 0];
 
 function SimpleOekaki(div){
 
@@ -28,24 +31,11 @@ function SimpleOekaki(div){
 
 	//drawing state
 	var diameter = DEFAULT_BRUSH_SIZE;
-	var backgroundColor = [1,1,1];
-	var layers = [
-		{
-			color:[1,0,0],
-			glBlend:[1,0,0],
-			visible: 1
-		},
-		{
-			color:[0,1,0],
-			glBlend:[0,1,0],
-			visible: 1
-		},
-		{
-			color:[0,0,1],
-			glBlend:[0,1,0],
-			visible: 1
-		}
-	];
+	var backgroundColor = DEFAULT_BACKGROUND_COLOR;
+	var currentLayer = 0;
+	var layerOrder = [0, 1, 2];
+	var LayerColors = [DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR];
+	var visibleLayers = [1, 1, 1];
 
 	var paintCircle = function(mouseX, mouseY){
 		gl.useProgram(shaderProgram);
@@ -67,7 +57,7 @@ function SimpleOekaki(div){
 	var paintGL = function(){
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.useProgram(shaderProgram2);
-		gl.clearColor(0.0, 0.0, 0.0, 1.0);
+		gl.clearColor(backgroundColor[0], backgroundColor[2], backgroundColor[3], 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 	}
@@ -117,7 +107,7 @@ function SimpleOekaki(div){
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvasFBO.width, canvasFBO.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, canvasTexture, 0);
 
-		gl.clearColor(0,1,0,1)
+		gl.clearColor(0,0,0,1)
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
