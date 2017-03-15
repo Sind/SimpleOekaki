@@ -1,4 +1,4 @@
-var VERSION = "0.0.8";
+var VERSION = "0.0.9";
 
 var MIN_BRUSH_SIZE = 1;
 var MAX_BRUSH_SIZE = 31;
@@ -109,7 +109,7 @@ void main(void) { \n\
   gl_Position = vec4(position, 0.0, 1.0); \n\
 }";
 
-	var f_sh = "precision highp float;\n\
+	var f_sh = "precision mediump float;\n\
 \n\
 uniform vec4 line;\n\
 uniform float size;\n\
@@ -183,7 +183,7 @@ void main(void) { \n\
   gl_Position = vec4(position, 0.0, 1.0); \n\
 }";
 
-		var f_sh2 = "precision highp float;\n\
+		var f_sh2 = "precision mediump float;\n\
 \n\
 varying vec2 Texcoord; \n\
 uniform vec3 backgroundColor; \n\
