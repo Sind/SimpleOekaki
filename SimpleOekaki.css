@@ -1,0 +1,27 @@
+.SimpleOekaki {
+	display: flex;
+	flex-direction: column;
+	background-color: black;
+	border-top-right-radius: 10px;
+	border-top-left-radius: 10px;
+
+}
+.SimpleOekaki .optionsholder{
+	display: flex;
+	flex-direction: column;
+}
+
+.SimpleOekaki .canvasholder {
+	padding: 50px;
+	background-color: gray;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.SimpleOekaki .optionsrow {
+	display: flex;
+	flex-direction: row;
+	height: 40px;
+	align-items: center;
+}

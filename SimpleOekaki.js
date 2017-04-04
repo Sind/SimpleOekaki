@@ -1,4 +1,4 @@
-var VERSION = "0.0.9";
+var VERSION = "0.1.0";
 
 var MIN_BRUSH_SIZE = 1;
 var MAX_BRUSH_SIZE = 31;
@@ -26,11 +26,16 @@ function SimpleOekaki(div){
 	var fragmentLayerVisibilityUniform;
 
 	//html
+	var maindiv;
 	var holder;
+	var canvasholder;
 	var canvas;
+	var toprow;
+	var bottomrow;
 	var size_slider;
 	var dec_size_button;
 	var inc_size_button;
+	var backgroundColorSelector;
 
 	//drawing state
 	var diameter = DEFAULT_BRUSH_SIZE;
@@ -51,7 +56,7 @@ function SimpleOekaki(div){
 	var paintGL = function(){
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.useProgram(shaderProgram2);
-		gl.clearColor(backgroundColor[0], backgroundColor[1], backgroundColor[3], 1.0);
+		gl.clearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.uniform3fv(fragmentBackgroundColorUniform, backgroundColor)
 		gl.uniform3iv(fragmentLayerOrderUniform, layerOrder);
@@ -251,6 +256,22 @@ void main(void){ \n\
 		setInterval(paintGL,15)
 	}
 
+	var DECtoHEX = function(c) {
+	    var hex = c.toString(16);
+	    return hex.length == 1 ? "0" + hex : hex;
+	}
+
+	var HTMLtoRGB = function(htmlcolor){
+		return htmlcolor.match(/[A-Za-z0-9]{2}/g).map(function(v) { return parseInt(v, 16)/255 });
+	}
+	var RGBtoHTML = function(rgbcolor){
+		return "#" + DECtoHEX(rgbcolor[0]*255) + DECtoHEX(rgbcolor[1]*255) + DECtoHEX(rgbcolor[2]*255);
+	}
+	this.set_background_color = function(colorArray){
+		backgroundColor = colorArray;
+		console.log("backgroundColor set:",backgroundColor);
+	}
+
 	this.set_brush_size = function(size){
 		if(size == diameter) return;
 		diameter = size;
@@ -330,6 +351,10 @@ void main(void){ \n\
 		size_slider.addEventListener('change', function(){
 			instance.set_brush_size(parseInt(size_slider.value));
 		})
+		
+		backgroundColorSelector.addEventListener('input', function(){
+			instance.set_background_color(HTMLtoRGB(backgroundColorSelector.value));
+		})
 	}
 
 	this.version = function(){
@@ -340,26 +365,45 @@ void main(void){ \n\
 		throw "You must provide a div as input parameter."
 		return;
 	}
-	holder = document.createElement('div');
+	maindiv = document.createElement("div");
+	maindiv.classList.add("SimpleOekaki");
+	optionsholder = document.createElement("div");
+	optionsholder.classList.add("optionsholder");
+	canvasholder = document.createElement("div");
+	canvasholder.classList.add("canvasholder");
+	toprow = document.createElement("div");
+	toprow.classList.add("optionsrow");
+	bottomrow = document.createElement("div");
+	bottomrow.classList.add("optionsrow");
 	canvas = document.createElement("canvas");
 	inc_size_button = document.createElement('button');
 	dec_size_button = document.createElement('button');
 	inc_size_button.innerHTML = "increase brush";
 	dec_size_button.innerHTML = "decrease brush";
-	size_slider = document.createElement("INPUT");
+	size_slider = document.createElement("input");
 	size_slider.setAttribute("type", "range");
 	size_slider.min = MIN_BRUSH_SIZE;
 	size_slider.max = MAX_BRUSH_SIZE;
 	size_slider.step = 2;
 	size_slider.value = DEFAULT_BRUSH_SIZE;
+	backgroundColorSelector = document.createElement("input");
+	backgroundColorSelector.setAttribute("type","color");
+	backgroundColorSelector.setAttribute("value",RGBtoHTML(backgroundColor));
+
 
 	canvas.height = 800;
 	canvas.width = 800;
-	div.appendChild(holder);
-	holder.appendChild(dec_size_button);
-	holder.appendChild(size_slider);
-	holder.appendChild(inc_size_button);
-	holder.appendChild(canvas);
+	div.classList
+	div.appendChild(maindiv);
+	maindiv.appendChild(optionsholder);
+	optionsholder.appendChild(toprow);
+	optionsholder.appendChild(bottomrow);
+	toprow.appendChild(dec_size_button);
+	toprow.appendChild(size_slider);
+	toprow.appendChild(inc_size_button);
+	toprow.appendChild(backgroundColorSelector);
+	maindiv.appendChild(canvasholder);
+	canvasholder.appendChild(canvas);
 	// Initialize the GL context
 	initializeGL();
 	if (!gl) {
