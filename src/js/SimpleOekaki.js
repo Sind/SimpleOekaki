@@ -1,451 +1,82 @@
-"use strict";
-var fs = require("fs");
-var iro = require("iro");
-(function (window){
-	var MIN_BRUSH_SIZE = 1;
-	var MAX_BRUSH_SIZE = 31;
-	var DEFAULT_BRUSH_SIZE = 1;
-
-	var DEFAULT_BACKGROUND_COLOR = [1, 1, 1];
-	var DEFAULT_LAYER_COLOR = [0, 0, 0];
-
-	// add event listener util
-	var addEventListener = function (el, ev, callback) {
-		el.addEventListener(ev, callback, false);
-	};
-
-	// when the DOM is ready, callback will be called
-	var whenReady = function (callback) {
-		// if the document is ready, call callback immediately
-		if (document.readyState === "complete"){
-			callback();
-		}
-		// else wait for DOM content
-		else {
-			document.addEventListener("readystatechange", function stateChange(e) {
-				if (e.target.readyState === "complete"){
-					callback();
-					e.target.removeEventListener("readystatechange", stateChange);
-				}
-			}, false);
-		}
-	};
-
-	var SimpleOekaki = function(div){
-
-		var instance = this;
-		// webgl
-		var gl;
-		var canvasFBO;
-		var canvasTexture;
-		var shaderProgram;
-		var shaderProgram2;
-		var vertexPositionAttribute;
-		var vertexPositionAttribute2;
-		var fragmentSizeUniform;
-		var fragmentLineUniform;
-		var fragmentBackgroundColorUniform;
-		var fragmentLayerOrderUniform;
-		var fragmentLayerColorsUniform;
-		var fragmentLayerVisibilityUniform;
-
-		//html
-		var maindiv;
-		var holder;
-		var canvasholder;
-		var canvas;
-		var toprow;
-		var bottomrow;
-		var size_slider;
-		var dec_size_button;
-		var inc_size_button;
-		var backgroundColorSelector;
-
-		//drawing state
-		var diameter = DEFAULT_BRUSH_SIZE;
-		var backgroundColor = DEFAULT_BACKGROUND_COLOR;
-		var currentLayer = 0;
-		var layerOrder = [0, 1, 2];
-		var layerColors = [DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR];
-		var layerVisibility = [1, 1, 1];
-
-		var paintLine = function(x0, y0, x1, y1){
-			gl.useProgram(shaderProgram);
-			gl.bindFramebuffer(gl.FRAMEBUFFER, canvasFBO);
-			gl.uniform4f(fragmentLineUniform, Math.round(x0)+.5,800-Math.round(y0)+.5,Math.round(x1)+.5,800-Math.round(y1)+.5);
-			gl.uniform1f(fragmentSizeUniform, diameter);
-			gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-		}
-
-		var paintGL = function(){
-			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-			gl.useProgram(shaderProgram2);
-			gl.clearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1.0);
-			gl.clear(gl.COLOR_BUFFER_BIT);
-			gl.uniform3fv(fragmentBackgroundColorUniform, backgroundColor)
-			gl.uniform3iv(fragmentLayerOrderUniform, layerOrder);
-			gl.uniform3fv(fragmentLayerVisibilityUniform, layerVisibility);
-			gl.uniformMatrix3fv(fragmentLayerColorsUniform, false, layerColors[0].concat(layerColors[1],layerColors[2]));
-			gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-		}
-		var getShader = function(str, type) {
-			var shader = gl.createShader(type);
-			gl.shaderSource(shader, str);
-			gl.compileShader(shader);
-			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-				console.log("JS:Shader compile failed");
-				console.log(gl.getShaderInfoLog(shader));
-				return null;
-			}
-			return shader;
-		}
-
-		var initBuffers = function(){
-			var canvasBuffer = gl.createBuffer();
-			gl.bindBuffer(gl.ARRAY_BUFFER,canvasBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array( [
-			                     -1, -1,
-			                      1, -1,
-			                      -1, 1,
-			                      1, 1]), gl.STATIC_DRAW);
-			gl.vertexAttribPointer(vertexPositionAttribute2,2,gl.FLOAT,false,0,0);
-			gl.vertexAttribPointer(vertexPositionAttribute,2,gl.FLOAT,false,0,0);
-
-			canvasFBO = gl.createFramebuffer();
-			gl.bindFramebuffer(gl.FRAMEBUFFER, canvasFBO);
-			canvasFBO.width = canvas.width;
-			canvasFBO.height = canvas.height;
-			
-			canvasTexture = gl.createTexture();
-			gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvasFBO.width, canvasFBO.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, canvasTexture, 0);
-
-			gl.clearColor(0,0,0,1)
-			gl.clear(gl.COLOR_BUFFER_BIT);
-
-			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		}
-
-		var initShaders = function(){
-		
-			var v_sh = "attribute vec2 position; \n\
-	void main(void) { \n\
-	  gl_Position = vec4(position, 0.0, 1.0); \n\
-	}";
-
-		var f_sh = "precision mediump float;\n\
-	\n\
-	uniform vec4 line;\n\
-	uniform float size;\n\
-	\n\
-	void main(void){\n\
-	  float x = gl_FragCoord.x;\n\
-	  float y = gl_FragCoord.y;\n\
-	  \n\
-	  float x1 = line[0];\n\
-	  float y1 = line[1];\n\
-	  float x2 = line[2];\n\
-	  float y2 = line[3];\n\
-	\n\
-	  float A = x - x1;\n\
-	  float B = y - y1;\n\
-	  float C = x2 - x1;\n\
-	  float D = y2 - y1;\n\
-	  \n\
-	  float dot = A * C + B * D;\n\
-	  float len_sq = C * C + D * D;\n\
-	  float param = -1.0;\n\
-	  if (len_sq != 0.0) //in case of 0 length line\n\
-	      param = dot / len_sq;\n\
-	  \n\
-	  float xx, yy;\n\
-	  \n\
-	  if (param < 0.0){\n\
-	    xx = x1;\n\
-	    yy = y1;\n\
-	  } else if(param > 1.0){\n\
-	    xx = x2;\n\
-	    yy = y2;\n\
-	  } else if(abs(C) > abs(D)){\n\
-	    xx = floor(x1 + param * C) + 0.5;\n\
-	    yy = floor(y1 + (xx - x1) / C * D) + 0.5;\n\
-	  }else{\n\
-	    yy = floor(y1 + param * D) + 0.5;\n\
-	    xx = floor(x1 + (yy - y1) / D * C) +0.5;\n\
-	  }\n\
-	  float d = distance(vec2(x,y),vec2(xx,yy));\n\
-	\n\
-	  if(d > size/2.0) discard;\n\
-	\n\
-	  gl_FragColor = vec4(1.0,1.0,1.0,1.0);\n\
-	}"
-
-			console.log("vertexshader",gl.VERTEX_SHADER);
-			var vertexShader = getShader(v_sh , gl.VERTEX_SHADER);
-			var fragmentShader = getShader(f_sh , gl.FRAGMENT_SHADER);
-			shaderProgram = gl.createProgram();
-			gl.attachShader(shaderProgram, vertexShader);
-			gl.attachShader(shaderProgram, fragmentShader);
-			gl.linkProgram(shaderProgram);
-			if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-				console.log("Could not initialise shaders");
-				console.log(gl.getProgramInfoLog(shaderProgram));
-			}
-			gl.useProgram(shaderProgram);
-			vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "position");
-			gl.enableVertexAttribArray(vertexPositionAttribute);
-
-			// vertexScreenResolutionUniform = gl.getUniformLocation(shaderProgram,"screenResolution");
-			// vertexMousePositionUniform= gl.getUniformLocation(shaderProgram,"mousePosition");
-			fragmentLineUniform = gl.getUniformLocation(shaderProgram,"line");
-			fragmentSizeUniform = gl.getUniformLocation(shaderProgram,"size");
-
-			var v_sh2 = "attribute vec2 position; \n\
-	varying vec2 Texcoord; \n\
-	void main(void) { \n\
-	  Texcoord = (position+1.0) / 2.0; \n\
-	  gl_Position = vec4(position, 0.0, 1.0); \n\
-	}";
-
-			var f_sh2 = "precision mediump float;\n\
-	\n\
-	varying vec2 Texcoord; \n\
-	uniform vec3 backgroundColor; \n\
-	uniform sampler2D imageTex; \n\
-	\n\
-	uniform ivec3 layerOrder; \n\
-	uniform vec3 layerVisibility; \n\
-	uniform mat3 layerColors; \n\
-	\n\
-	void main(void){ \n\
-	  vec4 texColor = texture2D(imageTex,Texcoord); \n\
-	\n\
-	  vec3 outputColor = backgroundColor; \n\
-	\n\
-	  for(int i = 0; i < 3; i++){ \n\
-	    int currentLayer = layerOrder[i]; \n\
-	\n\
-		if(currentLayer == 0){ \n\
-	      vec3 currentColor = layerColors[0]; \n\
-	      float currentSet = texColor[0]; \n\
-	      currentSet = currentSet * layerVisibility[0]; \n\
-	      outputColor = currentSet * currentColor + outputColor * (1.0-currentSet); \n\
-	    } else if(currentLayer == 1){ \n\
-	      vec3 currentColor = layerColors[1];\n\
-	      float currentSet = texColor[1];\n\
-	      currentSet = currentSet * layerVisibility[1]; \n\
-	      outputColor = currentSet * currentColor + outputColor * (1.0-currentSet);\n\
-	    } else { \n\
-	      vec3 currentColor = layerColors[2];\n\
-	      float currentSet = texColor[2];\n\
-	      currentSet = currentSet * layerVisibility[2]; \n\
-	      outputColor = currentSet * currentColor + outputColor * (1.0-currentSet);\n\
-	    } \n\
-	  } \n\
-	  gl_FragColor = vec4(outputColor,1.0);\n\
-	}";
-			var vertexShader2 = getShader(v_sh2 , gl.VERTEX_SHADER);
-			var fragmentShader2 = getShader(f_sh2 , gl.FRAGMENT_SHADER);
-			shaderProgram2 = gl.createProgram();
-			gl.attachShader(shaderProgram2, vertexShader2);
-			gl.attachShader(shaderProgram2, fragmentShader2);
-			gl.linkProgram(shaderProgram2);
-			if (!gl.getProgramParameter(shaderProgram2, gl.LINK_STATUS)) {
-				console.log("Could not initialise shaders");
-				console.log(gl.getProgramInfoLog(shaderProgram2));
-			}
-			vertexPositionAttribute2 = gl.getAttribLocation(shaderProgram2, "position");
-			gl.enableVertexAttribArray(vertexPositionAttribute2);
-
-			fragmentBackgroundColorUniform = gl.getUniformLocation(shaderProgram2, "backgroundColor");
-			fragmentLayerOrderUniform = gl.getUniformLocation(shaderProgram2, "layerOrder");
-			fragmentLayerColorsUniform = gl.getUniformLocation(shaderProgram2, "layerColors");
-			fragmentLayerVisibilityUniform = gl.getUniformLocation(shaderProgram2, "layerVisibility");
-		}
-
-		var initializeGL = function() {
-			gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-			gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
-			gl.viewport(0, 0, canvas.width, canvas.height);
-
-			// Initialize the shader program
-			initShaders();
-			initBuffers();
-			setInterval(paintGL,15)
-		}
-
-		var DECtoHEX = function(c) {
-		    var hex = c.toString(16);
-		    return hex.length == 1 ? "0" + hex : hex;
-		}
-
-		var HTMLtoRGB = function(htmlcolor){
-			return htmlcolor.match(/[A-Za-z0-9]{2}/g).map(function(v) { return parseInt(v, 16)/255 });
-		}
-		var RGBtoHTML = function(rgbcolor){
-			return "#" + DECtoHEX(rgbcolor[0]*255) + DECtoHEX(rgbcolor[1]*255) + DECtoHEX(rgbcolor[2]*255);
-		}
-		this.setBackgroundColor = function(colorArray){
-			backgroundColor = colorArray;
-			console.log("backgroundColor set:",backgroundColor);
-		}
-
-		this.setBrushSize = function(size){
-			if(size == diameter) return;
-			diameter = size;
-			if(diameter < MIN_BRUSH_SIZE){
-				diameter = MIN_BRUSH_SIZE;
-			}
-			if(diameter > MAX_BRUSH_SIZE){
-				diameter = MAX_BRUSH_SIZE;
-			}
-			console.log("brush size changed to",diameter);
-			size_slider.value = diameter;
-		}
-
-		this.decBrushSize = function(){
-			instance.setBrushSize(diameter-2);
-		}
-
-		this.incBrushSize = function(){
-			instance.setBrushSize(diameter+2);
-
-		}
-
-		var setInputCallbacks = function(){
-
-			var isDown;
-			var getMouse = function(e) {
-			  var bbox = canvas.getBoundingClientRect();
-			  var mx = e.clientX - bbox.left * (canvas.width / bbox.width);
-			  var my = e.clientY - bbox.top * (canvas.height / bbox.height);
-			  return {x:mx, y:my}
-			}
-
-			canvas.addEventListener('mousedown', function (startEvent) {
-				currentMousePos = getMouse(startEvent);
-				paintLine(currentMousePos.x,currentMousePos.y,currentMousePos.x,currentMousePos.y);
-				isDown = true;
-
-			});
-			document.addEventListener('mouseup', function(stopEvent){
-				isDown = false;
-			});
-			document.addEventListener('mousemove', function (moveEvent) {
-				if(!isDown) return
-				nextPos = getMouse(moveEvent);
-				paintLine(currentMousePos.x,currentMousePos.y,nextPos.x,nextPos.y);
-				currentMousePos = nextPos;
-				moveEvent.preventDefault();
-			});
-
-			canvas.addEventListener('touchstart', function(startEvent){
-				currentMousePos = getMouse(startEvent.targetTouches[0]);
-				paintLine(currentMousePos.x,currentMousePos.y,currentMousePos.x,currentMousePos.y);
-				isDown = true;
-
-			});
-			document.addEventListener('touchend', function(stopEvent){
-				isDown = false;
-			});
-			canvas.addEventListener('touchmove', function(moveEvent){
-				if(!isDown) return
-				moveEvent.preventDefault();
-
-				nextPos = getMouse(moveEvent.targetTouches[0]);
-
-				paintLine(currentMousePos.x,currentMousePos.y,nextPos.x,nextPos.y);
-				currentMousePos = nextPos;
-	            moveEvent.stopPropagation();
-	        	moveEvent.cancelBubble = true;
-
-			});
-			dec_size_button.addEventListener('click', function(){
-				instance.decBrushSize();
-			});
-			inc_size_button.addEventListener('click', function(){
-				instance.incBrushSize();
-			});
-			size_slider.addEventListener('change', function(){
-				instance.setBrushSize(parseInt(size_slider.value));
-			})
-			
-			backgroundColorSelector.addEventListener('input', function(){
-				instance.setBackgroundColor(HTMLtoRGB(backgroundColorSelector.value));
-			})
-		}
-
-		this.version = function(){
-			return VERSION;
-		};
-
-		if(div == null || div.tagName != 'DIV'){
-			throw "You must provide a div as input parameter."
-			return;
-		}
-		maindiv = document.createElement("div");
-		maindiv.classList.add("SimpleOekaki");
-		optionsholder = document.createElement("div");
-		optionsholder.classList.add("optionsholder");
-		canvasholder = document.createElement("div");
-		canvasholder.classList.add("canvasholder");
-		toprow = document.createElement("div");
-		toprow.classList.add("optionsrow");
-		bottomrow = document.createElement("div");
-		bottomrow.classList.add("optionsrow");
-		canvas = document.createElement("canvas");
-		inc_size_button = document.createElement('button');
-		dec_size_button = document.createElement('button');
-		inc_size_button.innerHTML = "increase brush";
-		dec_size_button.innerHTML = "decrease brush";
-		size_slider = document.createElement("input");
-		size_slider.setAttribute("type", "range");
-		size_slider.min = MIN_BRUSH_SIZE;
-		size_slider.max = MAX_BRUSH_SIZE;
-		size_slider.step = 2;
-		size_slider.value = DEFAULT_BRUSH_SIZE;
-		backgroundColorSelector = document.createElement("input");
-		backgroundColorSelector.setAttribute("type","color");
-		backgroundColorSelector.setAttribute("value",RGBtoHTML(backgroundColor));
 
 
-		canvas.height = 800;
-		canvas.width = 800;
-		div.classList
-		div.appendChild(maindiv);
-		maindiv.appendChild(optionsholder);
-		optionsholder.appendChild(toprow);
-		optionsholder.appendChild(bottomrow);
-		toprow.appendChild(dec_size_button);
-		toprow.appendChild(size_slider);
-		toprow.appendChild(inc_size_button);
-		toprow.appendChild(backgroundColorSelector);
-		maindiv.appendChild(canvasholder);
-		canvasholder.appendChild(canvas);
-		// Initialize the GL context
-		initializeGL();
-		if (!gl) {
-			throw "could not create webgl context";
-			return;
-		}
-		setInputCallbacks();
+// const fs = require('fs');
+// const iro = require('iro');
+const SOcanvas = require('./SimpleOekakiCanvas.js');
+const utils = require('./utils.js');
 
-		return this;
-	}
+const VERSION = '0.2.0';
 
-	if ("object" == typeof exports) {
-		// CommonJS
-		module.exports = SimpleOekaki;
-	} else {
-		// browser global
-		window.SimpleOekaki = SimpleOekaki;
-	}
+const SimpleOekaki = (div) => {
+  if (div == null || div.tagName !== 'DIV') {
+    throw 'You must provide a div as input parameter.';
+  }
+  const instance = {};
+  // html
+  const maindiv = document.createElement('div');
+  maindiv.classList.add('SimpleOekaki');
+  const optionsholder = document.createElement('div');
+  optionsholder.classList.add('optionsholder');
+  const canvasholder = document.createElement('div');
+  canvasholder.classList.add('canvasholder');
+  const toprow = document.createElement('div');
+  toprow.classList.add('optionsrow');
+  const bottomrow = document.createElement('div');
+  bottomrow.classList.add('optionsrow');
+  const incSizeButton = document.createElement('button');
+  const decSizeButton = document.createElement('button');
+  incSizeButton.innerHTML = 'increase brush';
+  decSizeButton.innerHTML = 'decrease brush';
+  const sizeSlider = document.createElement('input');
+  sizeSlider.setAttribute('type', 'range');
+  sizeSlider.step = 2;
+  const backgroundColorSelector = document.createElement('input');
+  backgroundColorSelector.setAttribute('type', 'color');
+  const canvas = SOcanvas(
+    canvasholder,
+    { onBrushSizeChange: (brushSize) => { sizeSlider.value = brushSize; } },
+  );
+  sizeSlider.value = canvas.DEFAULT_BRUSH_SIZE();
+  sizeSlider.min = canvas.MIN_BRUSH_SIZE();
+  sizeSlider.max = canvas.MAX_BRUSH_SIZE();
+  backgroundColorSelector.setAttribute('value', utils.RGBtoHTML(canvas.backgroundColor));
 
-})(window);
+  div.appendChild(maindiv);
+  maindiv.appendChild(optionsholder);
+  optionsholder.appendChild(toprow);
+  optionsholder.appendChild(bottomrow);
+  toprow.appendChild(decSizeButton);
+  toprow.appendChild(sizeSlider);
+  toprow.appendChild(incSizeButton);
+  toprow.appendChild(backgroundColorSelector);
+  maindiv.appendChild(canvasholder);
 
+  instance.version = () => VERSION;
+
+
+  const setInputCallbacks = () => {
+    decSizeButton.addEventListener('click', () => {
+      canvas.decBrushSize();
+    });
+    incSizeButton.addEventListener('click', () => {
+      canvas.incBrushSize();
+    });
+    sizeSlider.addEventListener('change', () => {
+      canvas.setBrushSize(parseInt(sizeSlider.value));
+    });
+
+    backgroundColorSelector.addEventListener('input', () => {
+      canvas.setBackgroundColor(utils.HTMLtoRGB(backgroundColorSelector.value));
+    });
+  };
+  setInputCallbacks();
+  return instance;
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = SimpleOekaki;
+}
+
+if (window) {
+  window.SimpleOekaki = SimpleOekaki;
+}
