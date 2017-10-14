@@ -21,7 +21,7 @@ class SimpleOekakiCanvas {
     // Drawing state
     this._diameter = DEFAULT_BRUSH_SIZE;
     this._backgroundColor = DEFAULT_BACKGROUND_COLOR;
-    this._currentLayer = 0;
+    this._currentLayer = 2;
     this._layerOrder = [0, 1, 2];
     this._layerColors = [DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR];
     this._layerVisibility = [1, 1, 1];
@@ -45,6 +45,18 @@ class SimpleOekakiCanvas {
   set backgroundColor(colorArray) {
     this._backgroundColor = colorArray;
     console.log('backgroundColor set:', this.backgroundColor);
+  }
+
+  get currentLayer() {
+    return this._currentLayer;
+  }
+
+  set currentLayer(id) {
+    if (id === this._currentLayer) return;
+    if (id >= 0 && id < 3) {
+      this._currentLayer = id;
+      if (this._onCurrentLayerChange) this._onCurrentLayerChange(id);
+    }
   }
 
   get brushSize() {

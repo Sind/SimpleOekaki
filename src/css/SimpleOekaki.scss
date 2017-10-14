@@ -1,5 +1,8 @@
 $so-background-color: #222222 !default;
-$so-layer-menu-width: 50% !default;
+$so-foreground-color: #888888 !default;
+$so-hightlight-color: #EEEEEE !default;
+$so-layer-menu-width: 200px !default;
+$so-color-menu-height: 200px !default;
 
 .SimpleOekaki {
 	display: flex;
@@ -11,13 +14,20 @@ $so-layer-menu-width: 50% !default;
 	overflow: hidden;
 	user-select: none;
 
+	.color-select{
+		border: 3px solid $so-hightlight-color;
+		height: 32px;
+		border-radius: 10px;
+		box-sizing: border-box;
+	}
+
 	.optionsholder{
 		display: flex;
 		flex-direction: column;
 		.optionsrow {
 			display: flex;
 			flex-direction: row;
-			padding: 0 10px;
+			padding: 5px 10px;
 			height: 40px;
 			align-items: center;
 			&.reverse {
@@ -25,21 +35,33 @@ $so-layer-menu-width: 50% !default;
 			}
 			.option {
 				margin:  2px;
+				color: $so-hightlight-color;
+				&.grow {
+					flex-grow : 1;
+				}
+				&.label {
+					font-size: 26px;
+					font-family: 'Roboto', sans-serif;
+				}
 			}
 		}
 	}
 	.canvasholder {
+		border-top: 4px dashed $so-background-color;
 		padding: 50px;
-		background-color: gray;
+		background-color: $so-foreground-color;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		canvas {
+			border: 4px dashed $so-background-color;
+		}
 	}
 	.material-icons {
-		cursor: pointer;
 		font-size: 32px;
-		&.md-light { color: rgba(255, 255, 255, 1); }
-		&.md-light.md-inactive { color: rgba(255, 255, 255, 0.3); }
+		cursor: pointer;
+		border-radius: 20px;
+		box-sizing: border-box;
 	}
 	.invisible-overlay{
 		position: absolute;
@@ -51,18 +73,54 @@ $so-layer-menu-width: 50% !default;
 	}
 	.layer-menu {
 		position: absolute;
+		top: 0px;
 		right: 0px;
 		height: 100%;
 		width: $so-layer-menu-width;
 		transition: all 1s;
-		background: red;
+		background: $so-foreground-color;
+		border-left: 4px dashed $so-background-color;
+		box-sizing:border-box;
+
 		&.hidden {
 			margin-right: -$so-layer-menu-width;
+		}
+		.layer-list {
+			display: flex;
+			flex-direction: column;
+		}
+		.layer {
+			margin: 10px;
+			border: 4px dashed $so-foreground-color;
+			border-radius: 20px;
+			width: $so-layer-menu-width - 20px;
+			box-sizing: border-box;
+			background: $so-background-color;
+			&.selected {
+				background: $so-foreground-color;
+				border-color: $so-background-color;
+			}
+		}
+	}
+
+	.color-menu {
+		position: absolute;
+		left: 0px;
+		bottom: 0px;
+		width: 100%;
+		height: $so-color-menu-height;
+		transition: all 1s;
+		background: blue;
+		&.hidden {
+			margin-bottom: -$so-color-menu-height;
+		}
+		.colorWheelHolder{
+			display: flex;
 		}
 	}
 
 	// For the sliders
-	$thumb-color: #000000;
+	$thumb-color: $so-background-color;
 	$thumb-radius: 0px;
 	$thumb-height: 20px;
 	$thumb-width: 10px;
@@ -77,7 +135,7 @@ $so-layer-menu-width: 50% !default;
 	$track-shadow-size: 0px;
 	$track-shadow-blur: 0px;
 	$track-border-width: 6px;
-	$track-border-color: #000000;
+	$track-border-color: $so-background-color;
 	$track-radius: 0px;
 	$contrast: 5%;
 	@import '../../node_modules/input-range-scss/_inputrange';
