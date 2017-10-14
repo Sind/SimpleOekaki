@@ -62,8 +62,8 @@ class SimpleOekakiCanvas {
     }
     console.log('brush size changed to', this._diameter);
 
-    if (this.onBrushSizeChange) {
-      this.onBrushSizeChange(this._diameter);
+    if (this._onBrushSizeChange) {
+      this._onBrushSizeChange(this._diameter);
     }
   }
 

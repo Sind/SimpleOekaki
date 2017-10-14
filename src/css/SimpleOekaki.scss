@@ -1,20 +1,30 @@
+$so-background-color: #222222 !default;
+$so-layer-menu-width: 50% !default;
 
 .SimpleOekaki {
 	display: flex;
+	position: relative;
 	flex-direction: column;
-	background-color: black;
+	background-color: $so-background-color;
 	border-top-right-radius: 10px;
 	border-top-left-radius: 10px;
+	overflow: hidden;
+	user-select: none;
+
 	.optionsholder{
 		display: flex;
 		flex-direction: column;
 		.optionsrow {
 			display: flex;
 			flex-direction: row;
+			padding: 0 10px;
 			height: 40px;
 			align-items: center;
 			&.reverse {
 				flex-direction:row-reverse;
+			}
+			.option {
+				margin:  2px;
 			}
 		}
 	}
@@ -26,11 +36,32 @@
 		justify-content: center;
 	}
 	.material-icons {
+		cursor: pointer;
 		font-size: 32px;
 		&.md-light { color: rgba(255, 255, 255, 1); }
 		&.md-light.md-inactive { color: rgba(255, 255, 255, 0.3); }
 	}
+	.invisible-overlay{
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		&.hidden {
+			display: none;
+		}
+	}
+	.layer-menu {
+		position: absolute;
+		right: 0px;
+		height: 100%;
+		width: $so-layer-menu-width;
+		transition: all 1s;
+		background: red;
+		&.hidden {
+			margin-right: -$so-layer-menu-width;
+		}
+	}
 
+	// For the sliders
 	$thumb-color: #000000;
 	$thumb-radius: 0px;
 	$thumb-height: 20px;
@@ -42,12 +73,12 @@
 
 	$track-color: #FFFFFF;
 	$track-width: 100px;
-	$track-height: 3px;
+	$track-height: 14px;
 	$track-shadow-size: 0px;
 	$track-shadow-blur: 0px;
-	$track-border-width: 0px;
-	$track-border-color: #FFFFFF;
-	$track-radius: 5px;
+	$track-border-width: 6px;
+	$track-border-color: #000000;
+	$track-radius: 0px;
 	$contrast: 5%;
 	@import '../../node_modules/input-range-scss/_inputrange';
 }
