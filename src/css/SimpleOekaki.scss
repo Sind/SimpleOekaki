@@ -1,3 +1,4 @@
+
 .SimpleOekaki {
 	display: flex;
 	flex-direction: column;
@@ -7,6 +8,15 @@
 	.optionsholder{
 		display: flex;
 		flex-direction: column;
+		.optionsrow {
+			display: flex;
+			flex-direction: row;
+			height: 40px;
+			align-items: center;
+			&.reverse {
+				flex-direction:row-reverse;
+			}
+		}
 	}
 	.canvasholder {
 		padding: 50px;
@@ -15,10 +25,29 @@
 		align-items: center;
 		justify-content: center;
 	}
-	.optionsrow {
-		display: flex;
-		flex-direction: row;
-		height: 40px;
-		align-items: center;
+	.material-icons {
+		font-size: 32px;
+		&.md-light { color: rgba(255, 255, 255, 1); }
+		&.md-light.md-inactive { color: rgba(255, 255, 255, 0.3); }
 	}
+
+	$thumb-color: #000000;
+	$thumb-radius: 0px;
+	$thumb-height: 20px;
+	$thumb-width: 10px;
+	$thumb-shadow-size: 0px;
+	$thumb-shadow-blur: 0px;
+	$thumb-border-width: 2px;
+	$thumb-border-color: #ffffff;
+
+	$track-color: #FFFFFF;
+	$track-width: 100px;
+	$track-height: 3px;
+	$track-shadow-size: 0px;
+	$track-shadow-blur: 0px;
+	$track-border-width: 0px;
+	$track-border-color: #FFFFFF;
+	$track-radius: 5px;
+	$contrast: 5%;
+	@import '../../node_modules/input-range-scss/_inputrange';
 }
