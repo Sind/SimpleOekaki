@@ -24,7 +24,13 @@ module.exports = function (env) {
       sourceMapFilename: isDevMode ? "SimpleOekaki.js.map" : "SimpleOekaki.min.js.map",
     },
     resolve: {
-      extensions: [".js"]
+      extensions: [".js"],
+      alias: {
+        "ui": path.resolve(__dirname, "node_modules/iro.js/src/ui/"),
+        "util": path.resolve(__dirname, "node_modules/iro.js/src/util/"),
+        "colorModels": path.resolve(__dirname, "node_modules/iro.js/src/colorModels/"),
+        "modules": path.resolve(__dirname, "node_modules/iro.js/src/modules/"),
+      }
     },
     module: {
       rules: [
@@ -41,6 +47,16 @@ module.exports = function (env) {
         {
           test: /\.[vf]sh$/,
           use: "raw-loader"
+        },
+        {
+          test: /\.scss$/,
+          use: [{
+              loader: "style-loader" // creates style nodes from JS strings
+          }, {
+              loader: "css-loader" // translates CSS into CommonJS
+          }, {
+              loader: "sass-loader" // compiles Sass to CSS
+          }]
         }
       ]
     },

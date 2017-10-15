@@ -1,8 +1,9 @@
 
 
 // const fs = require('fs');
-import iro from 'iro.js';
+import ColorPicker from 'iro.js/src/modules/colorPicker';
 import Sortable from 'sortablejs';
+import '../css/SimpleOekaki.scss';
 
 const SimpleOekakiCanvas = require('./SimpleOekakiCanvas.js');
 const utils = require('./utils.js');
@@ -170,6 +171,10 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     this._colorMenuCloseButton.classList.add('option');
     this._colorMenuCloseButton.innerHTML = 'close';
 
+    const colorMenuPickerRow = document.createElement('div');
+    colorMenuPickerRow.classList.add('optionsrow');
+    colorMenuPickerRow.classList.add('center');
+
     const colorPickerHolder = document.createElement('div');
     colorPickerHolder.classList.add('color-wheel-holder');
     colorPickerHolder.id = 'color-wheel-holder';
@@ -199,8 +204,9 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     this._colorMenu.appendChild(colorMenuOptionsHolder);
     colorMenuOptionsHolder.appendChild(colorMenuOptionsRow);
     colorMenuOptionsRow.appendChild(this._colorMenuCloseButton);
-    this._colorMenu.appendChild(colorPickerHolder);
-    this._colorPicker = new iro.ColorPicker('#color-wheel-holder');
+    colorMenuPickerRow.appendChild(colorPickerHolder);
+    colorMenuOptionsHolder.appendChild(colorMenuPickerRow);
+    this._colorPicker = new ColorPicker('#color-wheel-holder');
 
     this._setHTMLInputCallbacks();
   }

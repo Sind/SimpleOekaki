@@ -2,7 +2,7 @@ $so-background-color: #222222 !default;
 $so-foreground-color: #888888 !default;
 $so-hightlight-color: #EEEEEE !default;
 $so-layer-menu-width: 200px !default;
-$so-color-menu-height: 200px !default;
+$so-color-menu-height: 400px !default;
 
 .SimpleOekaki {
 	display: flex;
@@ -28,10 +28,12 @@ $so-color-menu-height: 200px !default;
 			display: flex;
 			flex-direction: row;
 			padding: 5px 10px;
-			height: 40px;
 			align-items: center;
 			&.reverse {
-				flex-direction:row-reverse;
+				flex-direction: row-reverse;
+			}
+			&.center {
+				justify-content: center;
 			}
 			.option {
 				margin:  2px;
@@ -115,10 +117,8 @@ $so-color-menu-height: 200px !default;
 			margin-bottom: -$so-color-menu-height;
 		}
 		.color-wheel-holder{
-			display: flex;
-			flex-grow: 1;
-			flex-direction: row;
-			justify-content: center;
+			width: 320px;
+			height: 320px;
 		}
 	}
 

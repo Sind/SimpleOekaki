@@ -2,10 +2,666 @@
  * SimpleOekaki.js
  * ----------------
  * Author: Srod Karim (github.com/Sind)
- * Last updated: Sat Oct 14 2017
+ * Last updated: Sun Oct 15 2017
  */
 var SimpleOekaki =
 /******/ (function(modules) { // webpackBootstrap
+/******/ 	function hotDisposeChunk(chunkId) {
+/******/ 		delete installedChunks[chunkId];
+/******/ 	}
+/******/ 	var parentHotUpdateCallback = this["webpackHotUpdateSimpleOekaki"];
+/******/ 	this["webpackHotUpdateSimpleOekaki"] = 
+/******/ 	function webpackHotUpdateCallback(chunkId, moreModules) { // eslint-disable-line no-unused-vars
+/******/ 		hotAddUpdateChunk(chunkId, moreModules);
+/******/ 		if(parentHotUpdateCallback) parentHotUpdateCallback(chunkId, moreModules);
+/******/ 	} ;
+/******/ 	
+/******/ 	function hotDownloadUpdateChunk(chunkId) { // eslint-disable-line no-unused-vars
+/******/ 		var head = document.getElementsByTagName("head")[0];
+/******/ 		var script = document.createElement("script");
+/******/ 		script.type = "text/javascript";
+/******/ 		script.charset = "utf-8";
+/******/ 		script.src = __webpack_require__.p + "" + chunkId + "." + hotCurrentHash + ".hot-update.js";
+/******/ 		;
+/******/ 		head.appendChild(script);
+/******/ 	}
+/******/ 	
+/******/ 	function hotDownloadManifest(requestTimeout) { // eslint-disable-line no-unused-vars
+/******/ 		requestTimeout = requestTimeout || 10000;
+/******/ 		return new Promise(function(resolve, reject) {
+/******/ 			if(typeof XMLHttpRequest === "undefined")
+/******/ 				return reject(new Error("No browser support"));
+/******/ 			try {
+/******/ 				var request = new XMLHttpRequest();
+/******/ 				var requestPath = __webpack_require__.p + "" + hotCurrentHash + ".hot-update.json";
+/******/ 				request.open("GET", requestPath, true);
+/******/ 				request.timeout = requestTimeout;
+/******/ 				request.send(null);
+/******/ 			} catch(err) {
+/******/ 				return reject(err);
+/******/ 			}
+/******/ 			request.onreadystatechange = function() {
+/******/ 				if(request.readyState !== 4) return;
+/******/ 				if(request.status === 0) {
+/******/ 					// timeout
+/******/ 					reject(new Error("Manifest request to " + requestPath + " timed out."));
+/******/ 				} else if(request.status === 404) {
+/******/ 					// no update available
+/******/ 					resolve();
+/******/ 				} else if(request.status !== 200 && request.status !== 304) {
+/******/ 					// other failure
+/******/ 					reject(new Error("Manifest request to " + requestPath + " failed."));
+/******/ 				} else {
+/******/ 					// success
+/******/ 					try {
+/******/ 						var update = JSON.parse(request.responseText);
+/******/ 					} catch(e) {
+/******/ 						reject(e);
+/******/ 						return;
+/******/ 					}
+/******/ 					resolve(update);
+/******/ 				}
+/******/ 			};
+/******/ 		});
+/******/ 	}
+/******/
+/******/ 	
+/******/ 	
+/******/ 	var hotApplyOnUpdate = true;
+/******/ 	var hotCurrentHash = "37aa7b92fe67ff5ecddb"; // eslint-disable-line no-unused-vars
+/******/ 	var hotRequestTimeout = 10000;
+/******/ 	var hotCurrentModuleData = {};
+/******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentParentsTemp = []; // eslint-disable-line no-unused-vars
+/******/ 	
+/******/ 	function hotCreateRequire(moduleId) { // eslint-disable-line no-unused-vars
+/******/ 		var me = installedModules[moduleId];
+/******/ 		if(!me) return __webpack_require__;
+/******/ 		var fn = function(request) {
+/******/ 			if(me.hot.active) {
+/******/ 				if(installedModules[request]) {
+/******/ 					if(installedModules[request].parents.indexOf(moduleId) < 0)
+/******/ 						installedModules[request].parents.push(moduleId);
+/******/ 				} else {
+/******/ 					hotCurrentParents = [moduleId];
+/******/ 					hotCurrentChildModule = request;
+/******/ 				}
+/******/ 				if(me.children.indexOf(request) < 0)
+/******/ 					me.children.push(request);
+/******/ 			} else {
+/******/ 				console.warn("[HMR] unexpected require(" + request + ") from disposed module " + moduleId);
+/******/ 				hotCurrentParents = [];
+/******/ 			}
+/******/ 			return __webpack_require__(request);
+/******/ 		};
+/******/ 		var ObjectFactory = function ObjectFactory(name) {
+/******/ 			return {
+/******/ 				configurable: true,
+/******/ 				enumerable: true,
+/******/ 				get: function() {
+/******/ 					return __webpack_require__[name];
+/******/ 				},
+/******/ 				set: function(value) {
+/******/ 					__webpack_require__[name] = value;
+/******/ 				}
+/******/ 			};
+/******/ 		};
+/******/ 		for(var name in __webpack_require__) {
+/******/ 			if(Object.prototype.hasOwnProperty.call(__webpack_require__, name) && name !== "e") {
+/******/ 				Object.defineProperty(fn, name, ObjectFactory(name));
+/******/ 			}
+/******/ 		}
+/******/ 		fn.e = function(chunkId) {
+/******/ 			if(hotStatus === "ready")
+/******/ 				hotSetStatus("prepare");
+/******/ 			hotChunksLoading++;
+/******/ 			return __webpack_require__.e(chunkId).then(finishChunkLoading, function(err) {
+/******/ 				finishChunkLoading();
+/******/ 				throw err;
+/******/ 			});
+/******/ 	
+/******/ 			function finishChunkLoading() {
+/******/ 				hotChunksLoading--;
+/******/ 				if(hotStatus === "prepare") {
+/******/ 					if(!hotWaitingFilesMap[chunkId]) {
+/******/ 						hotEnsureUpdateChunk(chunkId);
+/******/ 					}
+/******/ 					if(hotChunksLoading === 0 && hotWaitingFiles === 0) {
+/******/ 						hotUpdateDownloaded();
+/******/ 					}
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 		return fn;
+/******/ 	}
+/******/ 	
+/******/ 	function hotCreateModule(moduleId) { // eslint-disable-line no-unused-vars
+/******/ 		var hot = {
+/******/ 			// private stuff
+/******/ 			_acceptedDependencies: {},
+/******/ 			_declinedDependencies: {},
+/******/ 			_selfAccepted: false,
+/******/ 			_selfDeclined: false,
+/******/ 			_disposeHandlers: [],
+/******/ 			_main: hotCurrentChildModule !== moduleId,
+/******/ 	
+/******/ 			// Module API
+/******/ 			active: true,
+/******/ 			accept: function(dep, callback) {
+/******/ 				if(typeof dep === "undefined")
+/******/ 					hot._selfAccepted = true;
+/******/ 				else if(typeof dep === "function")
+/******/ 					hot._selfAccepted = dep;
+/******/ 				else if(typeof dep === "object")
+/******/ 					for(var i = 0; i < dep.length; i++)
+/******/ 						hot._acceptedDependencies[dep[i]] = callback || function() {};
+/******/ 				else
+/******/ 					hot._acceptedDependencies[dep] = callback || function() {};
+/******/ 			},
+/******/ 			decline: function(dep) {
+/******/ 				if(typeof dep === "undefined")
+/******/ 					hot._selfDeclined = true;
+/******/ 				else if(typeof dep === "object")
+/******/ 					for(var i = 0; i < dep.length; i++)
+/******/ 						hot._declinedDependencies[dep[i]] = true;
+/******/ 				else
+/******/ 					hot._declinedDependencies[dep] = true;
+/******/ 			},
+/******/ 			dispose: function(callback) {
+/******/ 				hot._disposeHandlers.push(callback);
+/******/ 			},
+/******/ 			addDisposeHandler: function(callback) {
+/******/ 				hot._disposeHandlers.push(callback);
+/******/ 			},
+/******/ 			removeDisposeHandler: function(callback) {
+/******/ 				var idx = hot._disposeHandlers.indexOf(callback);
+/******/ 				if(idx >= 0) hot._disposeHandlers.splice(idx, 1);
+/******/ 			},
+/******/ 	
+/******/ 			// Management API
+/******/ 			check: hotCheck,
+/******/ 			apply: hotApply,
+/******/ 			status: function(l) {
+/******/ 				if(!l) return hotStatus;
+/******/ 				hotStatusHandlers.push(l);
+/******/ 			},
+/******/ 			addStatusHandler: function(l) {
+/******/ 				hotStatusHandlers.push(l);
+/******/ 			},
+/******/ 			removeStatusHandler: function(l) {
+/******/ 				var idx = hotStatusHandlers.indexOf(l);
+/******/ 				if(idx >= 0) hotStatusHandlers.splice(idx, 1);
+/******/ 			},
+/******/ 	
+/******/ 			//inherit from previous dispose call
+/******/ 			data: hotCurrentModuleData[moduleId]
+/******/ 		};
+/******/ 		hotCurrentChildModule = undefined;
+/******/ 		return hot;
+/******/ 	}
+/******/ 	
+/******/ 	var hotStatusHandlers = [];
+/******/ 	var hotStatus = "idle";
+/******/ 	
+/******/ 	function hotSetStatus(newStatus) {
+/******/ 		hotStatus = newStatus;
+/******/ 		for(var i = 0; i < hotStatusHandlers.length; i++)
+/******/ 			hotStatusHandlers[i].call(null, newStatus);
+/******/ 	}
+/******/ 	
+/******/ 	// while downloading
+/******/ 	var hotWaitingFiles = 0;
+/******/ 	var hotChunksLoading = 0;
+/******/ 	var hotWaitingFilesMap = {};
+/******/ 	var hotRequestedFilesMap = {};
+/******/ 	var hotAvailableFilesMap = {};
+/******/ 	var hotDeferred;
+/******/ 	
+/******/ 	// The update info
+/******/ 	var hotUpdate, hotUpdateNewHash;
+/******/ 	
+/******/ 	function toModuleId(id) {
+/******/ 		var isNumber = (+id) + "" === id;
+/******/ 		return isNumber ? +id : id;
+/******/ 	}
+/******/ 	
+/******/ 	function hotCheck(apply) {
+/******/ 		if(hotStatus !== "idle") throw new Error("check() is only allowed in idle status");
+/******/ 		hotApplyOnUpdate = apply;
+/******/ 		hotSetStatus("check");
+/******/ 		return hotDownloadManifest(hotRequestTimeout).then(function(update) {
+/******/ 			if(!update) {
+/******/ 				hotSetStatus("idle");
+/******/ 				return null;
+/******/ 			}
+/******/ 			hotRequestedFilesMap = {};
+/******/ 			hotWaitingFilesMap = {};
+/******/ 			hotAvailableFilesMap = update.c;
+/******/ 			hotUpdateNewHash = update.h;
+/******/ 	
+/******/ 			hotSetStatus("prepare");
+/******/ 			var promise = new Promise(function(resolve, reject) {
+/******/ 				hotDeferred = {
+/******/ 					resolve: resolve,
+/******/ 					reject: reject
+/******/ 				};
+/******/ 			});
+/******/ 			hotUpdate = {};
+/******/ 			var chunkId = 0;
+/******/ 			{ // eslint-disable-line no-lone-blocks
+/******/ 				/*globals chunkId */
+/******/ 				hotEnsureUpdateChunk(chunkId);
+/******/ 			}
+/******/ 			if(hotStatus === "prepare" && hotChunksLoading === 0 && hotWaitingFiles === 0) {
+/******/ 				hotUpdateDownloaded();
+/******/ 			}
+/******/ 			return promise;
+/******/ 		});
+/******/ 	}
+/******/ 	
+/******/ 	function hotAddUpdateChunk(chunkId, moreModules) { // eslint-disable-line no-unused-vars
+/******/ 		if(!hotAvailableFilesMap[chunkId] || !hotRequestedFilesMap[chunkId])
+/******/ 			return;
+/******/ 		hotRequestedFilesMap[chunkId] = false;
+/******/ 		for(var moduleId in moreModules) {
+/******/ 			if(Object.prototype.hasOwnProperty.call(moreModules, moduleId)) {
+/******/ 				hotUpdate[moduleId] = moreModules[moduleId];
+/******/ 			}
+/******/ 		}
+/******/ 		if(--hotWaitingFiles === 0 && hotChunksLoading === 0) {
+/******/ 			hotUpdateDownloaded();
+/******/ 		}
+/******/ 	}
+/******/ 	
+/******/ 	function hotEnsureUpdateChunk(chunkId) {
+/******/ 		if(!hotAvailableFilesMap[chunkId]) {
+/******/ 			hotWaitingFilesMap[chunkId] = true;
+/******/ 		} else {
+/******/ 			hotRequestedFilesMap[chunkId] = true;
+/******/ 			hotWaitingFiles++;
+/******/ 			hotDownloadUpdateChunk(chunkId);
+/******/ 		}
+/******/ 	}
+/******/ 	
+/******/ 	function hotUpdateDownloaded() {
+/******/ 		hotSetStatus("ready");
+/******/ 		var deferred = hotDeferred;
+/******/ 		hotDeferred = null;
+/******/ 		if(!deferred) return;
+/******/ 		if(hotApplyOnUpdate) {
+/******/ 			// Wrap deferred object in Promise to mark it as a well-handled Promise to
+/******/ 			// avoid triggering uncaught exception warning in Chrome.
+/******/ 			// See https://bugs.chromium.org/p/chromium/issues/detail?id=465666
+/******/ 			Promise.resolve().then(function() {
+/******/ 				return hotApply(hotApplyOnUpdate);
+/******/ 			}).then(
+/******/ 				function(result) {
+/******/ 					deferred.resolve(result);
+/******/ 				},
+/******/ 				function(err) {
+/******/ 					deferred.reject(err);
+/******/ 				}
+/******/ 			);
+/******/ 		} else {
+/******/ 			var outdatedModules = [];
+/******/ 			for(var id in hotUpdate) {
+/******/ 				if(Object.prototype.hasOwnProperty.call(hotUpdate, id)) {
+/******/ 					outdatedModules.push(toModuleId(id));
+/******/ 				}
+/******/ 			}
+/******/ 			deferred.resolve(outdatedModules);
+/******/ 		}
+/******/ 	}
+/******/ 	
+/******/ 	function hotApply(options) {
+/******/ 		if(hotStatus !== "ready") throw new Error("apply() is only allowed in ready status");
+/******/ 		options = options || {};
+/******/ 	
+/******/ 		var cb;
+/******/ 		var i;
+/******/ 		var j;
+/******/ 		var module;
+/******/ 		var moduleId;
+/******/ 	
+/******/ 		function getAffectedStuff(updateModuleId) {
+/******/ 			var outdatedModules = [updateModuleId];
+/******/ 			var outdatedDependencies = {};
+/******/ 	
+/******/ 			var queue = outdatedModules.slice().map(function(id) {
+/******/ 				return {
+/******/ 					chain: [id],
+/******/ 					id: id
+/******/ 				};
+/******/ 			});
+/******/ 			while(queue.length > 0) {
+/******/ 				var queueItem = queue.pop();
+/******/ 				var moduleId = queueItem.id;
+/******/ 				var chain = queueItem.chain;
+/******/ 				module = installedModules[moduleId];
+/******/ 				if(!module || module.hot._selfAccepted)
+/******/ 					continue;
+/******/ 				if(module.hot._selfDeclined) {
+/******/ 					return {
+/******/ 						type: "self-declined",
+/******/ 						chain: chain,
+/******/ 						moduleId: moduleId
+/******/ 					};
+/******/ 				}
+/******/ 				if(module.hot._main) {
+/******/ 					return {
+/******/ 						type: "unaccepted",
+/******/ 						chain: chain,
+/******/ 						moduleId: moduleId
+/******/ 					};
+/******/ 				}
+/******/ 				for(var i = 0; i < module.parents.length; i++) {
+/******/ 					var parentId = module.parents[i];
+/******/ 					var parent = installedModules[parentId];
+/******/ 					if(!parent) continue;
+/******/ 					if(parent.hot._declinedDependencies[moduleId]) {
+/******/ 						return {
+/******/ 							type: "declined",
+/******/ 							chain: chain.concat([parentId]),
+/******/ 							moduleId: moduleId,
+/******/ 							parentId: parentId
+/******/ 						};
+/******/ 					}
+/******/ 					if(outdatedModules.indexOf(parentId) >= 0) continue;
+/******/ 					if(parent.hot._acceptedDependencies[moduleId]) {
+/******/ 						if(!outdatedDependencies[parentId])
+/******/ 							outdatedDependencies[parentId] = [];
+/******/ 						addAllToSet(outdatedDependencies[parentId], [moduleId]);
+/******/ 						continue;
+/******/ 					}
+/******/ 					delete outdatedDependencies[parentId];
+/******/ 					outdatedModules.push(parentId);
+/******/ 					queue.push({
+/******/ 						chain: chain.concat([parentId]),
+/******/ 						id: parentId
+/******/ 					});
+/******/ 				}
+/******/ 			}
+/******/ 	
+/******/ 			return {
+/******/ 				type: "accepted",
+/******/ 				moduleId: updateModuleId,
+/******/ 				outdatedModules: outdatedModules,
+/******/ 				outdatedDependencies: outdatedDependencies
+/******/ 			};
+/******/ 		}
+/******/ 	
+/******/ 		function addAllToSet(a, b) {
+/******/ 			for(var i = 0; i < b.length; i++) {
+/******/ 				var item = b[i];
+/******/ 				if(a.indexOf(item) < 0)
+/******/ 					a.push(item);
+/******/ 			}
+/******/ 		}
+/******/ 	
+/******/ 		// at begin all updates modules are outdated
+/******/ 		// the "outdated" status can propagate to parents if they don't accept the children
+/******/ 		var outdatedDependencies = {};
+/******/ 		var outdatedModules = [];
+/******/ 		var appliedUpdate = {};
+/******/ 	
+/******/ 		var warnUnexpectedRequire = function warnUnexpectedRequire() {
+/******/ 			console.warn("[HMR] unexpected require(" + result.moduleId + ") to disposed module");
+/******/ 		};
+/******/ 	
+/******/ 		for(var id in hotUpdate) {
+/******/ 			if(Object.prototype.hasOwnProperty.call(hotUpdate, id)) {
+/******/ 				moduleId = toModuleId(id);
+/******/ 				var result;
+/******/ 				if(hotUpdate[id]) {
+/******/ 					result = getAffectedStuff(moduleId);
+/******/ 				} else {
+/******/ 					result = {
+/******/ 						type: "disposed",
+/******/ 						moduleId: id
+/******/ 					};
+/******/ 				}
+/******/ 				var abortError = false;
+/******/ 				var doApply = false;
+/******/ 				var doDispose = false;
+/******/ 				var chainInfo = "";
+/******/ 				if(result.chain) {
+/******/ 					chainInfo = "\nUpdate propagation: " + result.chain.join(" -> ");
+/******/ 				}
+/******/ 				switch(result.type) {
+/******/ 					case "self-declined":
+/******/ 						if(options.onDeclined)
+/******/ 							options.onDeclined(result);
+/******/ 						if(!options.ignoreDeclined)
+/******/ 							abortError = new Error("Aborted because of self decline: " + result.moduleId + chainInfo);
+/******/ 						break;
+/******/ 					case "declined":
+/******/ 						if(options.onDeclined)
+/******/ 							options.onDeclined(result);
+/******/ 						if(!options.ignoreDeclined)
+/******/ 							abortError = new Error("Aborted because of declined dependency: " + result.moduleId + " in " + result.parentId + chainInfo);
+/******/ 						break;
+/******/ 					case "unaccepted":
+/******/ 						if(options.onUnaccepted)
+/******/ 							options.onUnaccepted(result);
+/******/ 						if(!options.ignoreUnaccepted)
+/******/ 							abortError = new Error("Aborted because " + moduleId + " is not accepted" + chainInfo);
+/******/ 						break;
+/******/ 					case "accepted":
+/******/ 						if(options.onAccepted)
+/******/ 							options.onAccepted(result);
+/******/ 						doApply = true;
+/******/ 						break;
+/******/ 					case "disposed":
+/******/ 						if(options.onDisposed)
+/******/ 							options.onDisposed(result);
+/******/ 						doDispose = true;
+/******/ 						break;
+/******/ 					default:
+/******/ 						throw new Error("Unexception type " + result.type);
+/******/ 				}
+/******/ 				if(abortError) {
+/******/ 					hotSetStatus("abort");
+/******/ 					return Promise.reject(abortError);
+/******/ 				}
+/******/ 				if(doApply) {
+/******/ 					appliedUpdate[moduleId] = hotUpdate[moduleId];
+/******/ 					addAllToSet(outdatedModules, result.outdatedModules);
+/******/ 					for(moduleId in result.outdatedDependencies) {
+/******/ 						if(Object.prototype.hasOwnProperty.call(result.outdatedDependencies, moduleId)) {
+/******/ 							if(!outdatedDependencies[moduleId])
+/******/ 								outdatedDependencies[moduleId] = [];
+/******/ 							addAllToSet(outdatedDependencies[moduleId], result.outdatedDependencies[moduleId]);
+/******/ 						}
+/******/ 					}
+/******/ 				}
+/******/ 				if(doDispose) {
+/******/ 					addAllToSet(outdatedModules, [result.moduleId]);
+/******/ 					appliedUpdate[moduleId] = warnUnexpectedRequire;
+/******/ 				}
+/******/ 			}
+/******/ 		}
+/******/ 	
+/******/ 		// Store self accepted outdated modules to require them later by the module system
+/******/ 		var outdatedSelfAcceptedModules = [];
+/******/ 		for(i = 0; i < outdatedModules.length; i++) {
+/******/ 			moduleId = outdatedModules[i];
+/******/ 			if(installedModules[moduleId] && installedModules[moduleId].hot._selfAccepted)
+/******/ 				outdatedSelfAcceptedModules.push({
+/******/ 					module: moduleId,
+/******/ 					errorHandler: installedModules[moduleId].hot._selfAccepted
+/******/ 				});
+/******/ 		}
+/******/ 	
+/******/ 		// Now in "dispose" phase
+/******/ 		hotSetStatus("dispose");
+/******/ 		Object.keys(hotAvailableFilesMap).forEach(function(chunkId) {
+/******/ 			if(hotAvailableFilesMap[chunkId] === false) {
+/******/ 				hotDisposeChunk(chunkId);
+/******/ 			}
+/******/ 		});
+/******/ 	
+/******/ 		var idx;
+/******/ 		var queue = outdatedModules.slice();
+/******/ 		while(queue.length > 0) {
+/******/ 			moduleId = queue.pop();
+/******/ 			module = installedModules[moduleId];
+/******/ 			if(!module) continue;
+/******/ 	
+/******/ 			var data = {};
+/******/ 	
+/******/ 			// Call dispose handlers
+/******/ 			var disposeHandlers = module.hot._disposeHandlers;
+/******/ 			for(j = 0; j < disposeHandlers.length; j++) {
+/******/ 				cb = disposeHandlers[j];
+/******/ 				cb(data);
+/******/ 			}
+/******/ 			hotCurrentModuleData[moduleId] = data;
+/******/ 	
+/******/ 			// disable module (this disables requires from this module)
+/******/ 			module.hot.active = false;
+/******/ 	
+/******/ 			// remove module from cache
+/******/ 			delete installedModules[moduleId];
+/******/ 	
+/******/ 			// when disposing there is no need to call dispose handler
+/******/ 			delete outdatedDependencies[moduleId];
+/******/ 	
+/******/ 			// remove "parents" references from all children
+/******/ 			for(j = 0; j < module.children.length; j++) {
+/******/ 				var child = installedModules[module.children[j]];
+/******/ 				if(!child) continue;
+/******/ 				idx = child.parents.indexOf(moduleId);
+/******/ 				if(idx >= 0) {
+/******/ 					child.parents.splice(idx, 1);
+/******/ 				}
+/******/ 			}
+/******/ 		}
+/******/ 	
+/******/ 		// remove outdated dependency from module children
+/******/ 		var dependency;
+/******/ 		var moduleOutdatedDependencies;
+/******/ 		for(moduleId in outdatedDependencies) {
+/******/ 			if(Object.prototype.hasOwnProperty.call(outdatedDependencies, moduleId)) {
+/******/ 				module = installedModules[moduleId];
+/******/ 				if(module) {
+/******/ 					moduleOutdatedDependencies = outdatedDependencies[moduleId];
+/******/ 					for(j = 0; j < moduleOutdatedDependencies.length; j++) {
+/******/ 						dependency = moduleOutdatedDependencies[j];
+/******/ 						idx = module.children.indexOf(dependency);
+/******/ 						if(idx >= 0) module.children.splice(idx, 1);
+/******/ 					}
+/******/ 				}
+/******/ 			}
+/******/ 		}
+/******/ 	
+/******/ 		// Not in "apply" phase
+/******/ 		hotSetStatus("apply");
+/******/ 	
+/******/ 		hotCurrentHash = hotUpdateNewHash;
+/******/ 	
+/******/ 		// insert new code
+/******/ 		for(moduleId in appliedUpdate) {
+/******/ 			if(Object.prototype.hasOwnProperty.call(appliedUpdate, moduleId)) {
+/******/ 				modules[moduleId] = appliedUpdate[moduleId];
+/******/ 			}
+/******/ 		}
+/******/ 	
+/******/ 		// call accept handlers
+/******/ 		var error = null;
+/******/ 		for(moduleId in outdatedDependencies) {
+/******/ 			if(Object.prototype.hasOwnProperty.call(outdatedDependencies, moduleId)) {
+/******/ 				module = installedModules[moduleId];
+/******/ 				if(module) {
+/******/ 					moduleOutdatedDependencies = outdatedDependencies[moduleId];
+/******/ 					var callbacks = [];
+/******/ 					for(i = 0; i < moduleOutdatedDependencies.length; i++) {
+/******/ 						dependency = moduleOutdatedDependencies[i];
+/******/ 						cb = module.hot._acceptedDependencies[dependency];
+/******/ 						if(cb) {
+/******/ 							if(callbacks.indexOf(cb) >= 0) continue;
+/******/ 							callbacks.push(cb);
+/******/ 						}
+/******/ 					}
+/******/ 					for(i = 0; i < callbacks.length; i++) {
+/******/ 						cb = callbacks[i];
+/******/ 						try {
+/******/ 							cb(moduleOutdatedDependencies);
+/******/ 						} catch(err) {
+/******/ 							if(options.onErrored) {
+/******/ 								options.onErrored({
+/******/ 									type: "accept-errored",
+/******/ 									moduleId: moduleId,
+/******/ 									dependencyId: moduleOutdatedDependencies[i],
+/******/ 									error: err
+/******/ 								});
+/******/ 							}
+/******/ 							if(!options.ignoreErrored) {
+/******/ 								if(!error)
+/******/ 									error = err;
+/******/ 							}
+/******/ 						}
+/******/ 					}
+/******/ 				}
+/******/ 			}
+/******/ 		}
+/******/ 	
+/******/ 		// Load self accepted modules
+/******/ 		for(i = 0; i < outdatedSelfAcceptedModules.length; i++) {
+/******/ 			var item = outdatedSelfAcceptedModules[i];
+/******/ 			moduleId = item.module;
+/******/ 			hotCurrentParents = [moduleId];
+/******/ 			try {
+/******/ 				__webpack_require__(moduleId);
+/******/ 			} catch(err) {
+/******/ 				if(typeof item.errorHandler === "function") {
+/******/ 					try {
+/******/ 						item.errorHandler(err);
+/******/ 					} catch(err2) {
+/******/ 						if(options.onErrored) {
+/******/ 							options.onErrored({
+/******/ 								type: "self-accept-error-handler-errored",
+/******/ 								moduleId: moduleId,
+/******/ 								error: err2,
+/******/ 								orginalError: err, // TODO remove in webpack 4
+/******/ 								originalError: err
+/******/ 							});
+/******/ 						}
+/******/ 						if(!options.ignoreErrored) {
+/******/ 							if(!error)
+/******/ 								error = err2;
+/******/ 						}
+/******/ 						if(!error)
+/******/ 							error = err;
+/******/ 					}
+/******/ 				} else {
+/******/ 					if(options.onErrored) {
+/******/ 						options.onErrored({
+/******/ 							type: "self-accept-errored",
+/******/ 							moduleId: moduleId,
+/******/ 							error: err
+/******/ 						});
+/******/ 					}
+/******/ 					if(!options.ignoreErrored) {
+/******/ 						if(!error)
+/******/ 							error = err;
+/******/ 					}
+/******/ 				}
+/******/ 			}
+/******/ 		}
+/******/ 	
+/******/ 		// handle errors in accept handlers and self accepted module load
+/******/ 		if(error) {
+/******/ 			hotSetStatus("fail");
+/******/ 			return Promise.reject(error);
+/******/ 		}
+/******/ 	
+/******/ 		hotSetStatus("idle");
+/******/ 		return new Promise(function(resolve) {
+/******/ 			resolve(outdatedModules);
+/******/ 		});
+/******/ 	}
+/******/
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -20,11 +676,14 @@ var SimpleOekaki =
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
 /******/ 			l: false,
-/******/ 			exports: {}
+/******/ 			exports: {},
+/******/ 			hot: hotCreateModule(moduleId),
+/******/ 			parents: (hotCurrentParentsTemp = hotCurrentParents, hotCurrentParents = [], hotCurrentParentsTemp),
+/******/ 			children: []
 /******/ 		};
 /******/
 /******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, hotCreateRequire(moduleId));
 /******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.l = true;
@@ -66,8 +725,11 @@ var SimpleOekaki =
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "/test";
 /******/
+/******/ 	// __webpack_hash__
+/******/ 	__webpack_require__.h = function() { return hotCurrentHash; };
+/******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return hotCreateRequire(7)(__webpack_require__.s = 7);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -77,15 +739,354 @@ var SimpleOekaki =
 "use strict";
 
 
+var round = Math.round;
+
+module.exports = {
+  name: "rgb",
+
+  fromHsv: function fromHsv(hsv) {
+    var r, g, b, i, f, p, q, t;
+    var h = hsv.h / 360,
+        s = hsv.s / 100,
+        v = hsv.v / 100;
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+      case 0:
+        r = v, g = t, b = p;break;
+      case 1:
+        r = q, g = v, b = p;break;
+      case 2:
+        r = p, g = v, b = t;break;
+      case 3:
+        r = p, g = q, b = v;break;
+      case 4:
+        r = t, g = p, b = v;break;
+      case 5:
+        r = v, g = p, b = q;break;
+    }
+    return { r: round(r * 255), g: round(g * 255), b: round(b * 255) };
+  },
+
+  toHsv: function toHsv(rgb) {
+    // Modified from https://github.com/bgrins/TinyColor/blob/master/tinycolor.js#L446
+    var r = rgb.r / 255,
+        g = rgb.g / 255,
+        b = rgb.b / 255;
+    var max = Math.max(r, g, b),
+        min = Math.min(r, g, b),
+        delta = max - min;
+    var hue;
+    switch (max) {
+      case min:
+        hue = 0;
+        break;
+      case r:
+        hue = (g - b) / delta + (g < b ? 6 : 0);
+        break;
+      case g:
+        hue = (b - r) / delta + 2;
+        break;
+      case b:
+        hue = (r - g) / delta + 4;
+        break;
+    }
+    hue /= 6;
+    return {
+      h: round(hue * 360),
+      s: round(max === 0 ? 0 : delta / max * 100),
+      v: round(max * 100)
+    };
+  }
+};
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(17)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, ".SimpleOekaki {\n  display: flex;\n  position: relative;\n  flex-direction: column;\n  background-color: #222222;\n  border-top-right-radius: 10px;\n  border-top-left-radius: 10px;\n  overflow: hidden;\n  user-select: none; }\n  .SimpleOekaki .color-select {\n    border: 3px solid #EEEEEE;\n    height: 32px;\n    border-radius: 10px;\n    box-sizing: border-box; }\n  .SimpleOekaki .optionsholder {\n    display: flex;\n    flex-direction: column; }\n    .SimpleOekaki .optionsholder .optionsrow {\n      display: flex;\n      flex-direction: row;\n      padding: 5px 10px;\n      align-items: center; }\n      .SimpleOekaki .optionsholder .optionsrow.reverse {\n        flex-direction: row-reverse; }\n      .SimpleOekaki .optionsholder .optionsrow.center {\n        justify-content: center; }\n      .SimpleOekaki .optionsholder .optionsrow .option {\n        margin: 2px;\n        color: #EEEEEE; }\n        .SimpleOekaki .optionsholder .optionsrow .option.grow {\n          flex-grow: 1; }\n        .SimpleOekaki .optionsholder .optionsrow .option.label {\n          font-size: 26px;\n          font-family: 'Roboto', sans-serif; }\n  .SimpleOekaki .canvasholder {\n    border-top: 4px dashed #222222;\n    padding: 50px;\n    background-color: #888888;\n    display: flex;\n    align-items: center;\n    justify-content: center; }\n    .SimpleOekaki .canvasholder canvas {\n      border: 4px dashed #222222; }\n  .SimpleOekaki .material-icons {\n    font-size: 32px;\n    cursor: pointer;\n    border-radius: 20px;\n    box-sizing: border-box; }\n  .SimpleOekaki .invisible-overlay {\n    position: absolute;\n    width: 100%;\n    height: 100%; }\n    .SimpleOekaki .invisible-overlay.hidden {\n      display: none; }\n  .SimpleOekaki .layer-menu {\n    position: absolute;\n    top: 0px;\n    right: 0px;\n    height: 100%;\n    width: 200px;\n    transition: all 1s;\n    background: #888888;\n    border-left: 4px dashed #222222;\n    box-sizing: border-box; }\n    .SimpleOekaki .layer-menu.hidden {\n      margin-right: -200px; }\n    .SimpleOekaki .layer-menu .layer-list {\n      display: flex;\n      flex-direction: column; }\n    .SimpleOekaki .layer-menu .layer {\n      margin: 10px;\n      border: 4px dashed #888888;\n      border-radius: 20px;\n      width: 180px;\n      box-sizing: border-box;\n      background: #222222; }\n      .SimpleOekaki .layer-menu .layer.selected {\n        background: #888888;\n        border-color: #222222; }\n  .SimpleOekaki .color-menu {\n    position: absolute;\n    left: 0px;\n    bottom: 0px;\n    width: 100%;\n    height: 400px;\n    transition: all 1s;\n    background: blue; }\n    .SimpleOekaki .color-menu.hidden {\n      margin-bottom: -400px; }\n    .SimpleOekaki .color-menu .color-wheel-holder {\n      width: 320px;\n      height: 320px; }\n  .SimpleOekaki [type='range'] {\n    -webkit-appearance: none;\n    margin: 10px 0;\n    width: 100px; }\n    .SimpleOekaki [type='range']:focus {\n      outline: 0; }\n      .SimpleOekaki [type='range']:focus::-webkit-slider-runnable-track {\n        background: white; }\n      .SimpleOekaki [type='range']:focus::-ms-fill-lower {\n        background: #FFFFFF; }\n      .SimpleOekaki [type='range']:focus::-ms-fill-upper {\n        background: white; }\n    .SimpleOekaki [type='range']::-webkit-slider-runnable-track {\n      cursor: pointer;\n      height: 14px;\n      transition: all .2s ease;\n      width: 100px;\n      box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2), 0 0 0px rgba(13, 13, 13, 0.2);\n      background: #FFFFFF;\n      border: 6px solid #222222;\n      border-radius: 0px; }\n    .SimpleOekaki [type='range']::-webkit-slider-thumb {\n      box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2), 0 0 0px rgba(13, 13, 13, 0.2);\n      background: #222222;\n      border: 2px solid #ffffff;\n      border-radius: 0px;\n      cursor: pointer;\n      height: 20px;\n      width: 10px;\n      -webkit-appearance: none;\n      margin-top: -9px; }\n    .SimpleOekaki [type='range']::-moz-range-track {\n      cursor: pointer;\n      height: 14px;\n      transition: all .2s ease;\n      width: 100px;\n      box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2), 0 0 0px rgba(13, 13, 13, 0.2);\n      background: #FFFFFF;\n      border: 6px solid #222222;\n      border-radius: 0px; }\n    .SimpleOekaki [type='range']::-moz-range-thumb {\n      box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2), 0 0 0px rgba(13, 13, 13, 0.2);\n      background: #222222;\n      border: 2px solid #ffffff;\n      border-radius: 0px;\n      cursor: pointer;\n      height: 20px;\n      width: 10px; }\n    .SimpleOekaki [type='range']::-ms-track {\n      cursor: pointer;\n      height: 14px;\n      transition: all .2s ease;\n      width: 100px;\n      background: transparent;\n      border-color: transparent;\n      border-width: 10px 0;\n      color: transparent; }\n    .SimpleOekaki [type='range']::-ms-fill-lower {\n      box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2), 0 0 0px rgba(13, 13, 13, 0.2);\n      background: #f2f2f2;\n      border: 6px solid #222222;\n      border-radius: 0px; }\n    .SimpleOekaki [type='range']::-ms-fill-upper {\n      box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2), 0 0 0px rgba(13, 13, 13, 0.2);\n      background: #FFFFFF;\n      border: 6px solid #222222;\n      border-radius: 0px; }\n    .SimpleOekaki [type='range']::-ms-thumb {\n      box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2), 0 0 0px rgba(13, 13, 13, 0.2);\n      background: #222222;\n      border: 2px solid #ffffff;\n      border-radius: 0px;\n      cursor: pointer;\n      height: 20px;\n      width: 10px;\n      margin-top: 0; }\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+function addColorStops(gradient, colorStops) {
+  for (stop in colorStops) {
+    gradient.addColorStop(stop, colorStops[stop]);
+  }
+  return gradient;
+};
+
+module.exports = {
+  linear: function linear(ctx, x1, y1, x2, y2, colorStops) {
+    return addColorStops(ctx.createLinearGradient(x1, y1, x2, y1), colorStops);
+  },
+  radial: function radial(ctx, x, y, min, max, colorStops) {
+    return addColorStops(ctx.createRadialGradient(x, y, min, x, y, max), colorStops);
+  }
+};
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+  * @constructor marker UI
+  * @param {Object} ctx - canvas 2d context to draw on
+  * @param {Object} opts - options
+*/
+var marker = function marker(ctx, opts) {
+  this.opts = opts;
+  this._ctx = ctx;
+  this._last = false;
+};
+
+marker.prototype = {
+  /**
+    * @desc Draw a ring (only used internally)
+    * @param {Number} x - centerpoint x coordinate
+    * @param {Number} y - centerpoint y coordinate
+    * @param {String} color - css color of the ring
+    * @param {Number} lineWidth - width of the ring stroke
+    * @private
+  */
+  _ring: function _ring(x, y, color, lineWidth) {
+    var ctx = this._ctx;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.arc(x, y, this.opts.r, 0, 2 * Math.PI);
+    ctx.stroke();
+  },
+
+  /**
+    * @desc move markerpoint to centerpoint (x, y) and redraw
+    * @param {Number} x - point x coordinate
+    * @param {Number} y - point y coordinate
+  */
+  move: function move(x, y) {
+    // Get the current position
+    var last = this._last;
+    var radius = this.opts.r + 4;
+    // Clear the current marker
+    if (last) this._ctx.clearRect(last.x - radius, last.y - radius, radius * 2, radius * 2);
+    // Redraw at the new coordinates
+    this._ring(x, y, "#333", 4);
+    this._ring(x, y, "#fff", 2);
+    // Update the position
+    this._last = { x: x, y: y };
+  }
+};
+
+module.exports = marker;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _hsl = __webpack_require__(5);
+
+var _hsl2 = _interopRequireDefault(_hsl);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+module.exports = {
+  name: "hslString",
+
+  fromHsv: function fromHsv(hsv) {
+    var color = _hsl2.default.fromHsv(hsv);
+    return "hsl" + (color.a ? "a" : "") + "(" + color.h + ", " + color.s + "%, " + color.l + "%" + (color.a ? ", " + color.a : "") + ")";
+  },
+
+  toHsv: function toHsv(hslString) {
+    var parsed = hslString.match(/(hsla?)\((\d+)(?:\D+?)(\d+)(?:\D+?)(\d+)(?:\D+?)?([0-9\.]+?)?\)/i);
+    return _hsl2.default.toHsv({
+      h: parseInt(parsed[2]),
+      s: parseInt(parsed[3]),
+      l: parseInt(parsed[4])
+    });
+  }
+};
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var round = Math.round;
+
+module.exports = {
+  name: "hsl",
+
+  fromHsv: function fromHsv(hsv) {
+    var s = hsv.s / 100,
+        v = hsv.v / 100;
+    var p = (2 - s) * v;
+    s = s == 0 ? 0 : s * v / (p < 1 ? p : 2 - p);
+    return {
+      h: hsv.h,
+      s: round(s * 100),
+      l: round(p * 50)
+    };
+  },
+
+  toHsv: function toHsv(hsl) {
+    var s = hsl.s / 50,
+        l = hsl.l / 100;
+    s *= l <= 1 ? l : 2 - l;
+    return {
+      h: hsl.h,
+      s: round(2 * s / (l + s) * 100),
+      v: round((l + s) * 100)
+    };
+  }
+};
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+// Quick reference to the document object and some strings since we usethem more than once
+var doc = document,
+    READYSTATE_COMPLETE = "complete",
+    READYSTATE_CHANGE = "readystatechange";
+
+/**
+ * @desc iterate a list (or create a one-item list from a string), calling callback with each item
+ * @param {ArrayOrString} list an array or string, callback will be called for each array item, or once if a string is given
+ * @param {Function} callback a function to call for each item, the item will be passed as the first parameter
+ * @access private
+*/
+function iterateList(list, callback) {
+  list = "string" == typeof list ? [list] : list;
+  list.forEach(callback);
+};
+
+module.exports = {
+  /**
+   * @desc find a html element that matches a CSS selector
+   * @param {String} selector the CSS selector to be used to target a HTML element
+   * @return {Element} the HTML element that matches the selector given
+  */
+  $: function $(selector) {
+    return doc.querySelector(selector);
+  },
+
+  /**
+   * @desc create a new HTML element
+   * @param {String} tagName the tag type of the element to create
+   * @return {Element} the newly created HTML element
+  */
+  create: function create(tagName) {
+    return doc.createElement(tagName);
+  },
+
+  /**
+   * @desc append a child element to an element
+   * @param {Element} el the parent element to append to
+   * @param {Element} child the child element to append
+   * @return {Element} the child element, now appended to the parent
+  */
+  append: function append(el, child) {
+    return el.appendChild(child);
+  },
+
+  /**
+   * @desc get an element's attribute by name
+   * @param {Element} el target element
+   * @param {String} attrName the name of the attribute to get
+   * @return {String} the value of the attribute
+  */
+  attr: function attr(el, attrName) {
+    return el.getAttribute(attrName);
+  },
+
+  /**
+   * @desc listen to one or more events on an element
+   * @param {Element} el target element
+   * @param {ArrayOrString} eventList the events to listen to
+   * @param {Function} callback the event callback function
+  */
+  listen: function listen(el, eventList, callback) {
+    iterateList(eventList, function (eventName) {
+      el.addEventListener(eventName, callback);
+    });
+  },
+
+  /**
+   * @desc remove an event listener on an element
+   * @param {Element} el target element
+   * @param {ArrayOrString} eventList the events to remove
+   * @param {Function} callback the event callback function
+  */
+  unlisten: function unlisten(el, eventList, callback) {
+    iterateList(eventList, function (eventName) {
+      el.removeEventListener(eventName, callback);
+    });
+  },
+
+  /**
+   * @desc call callback when the page document is ready
+   * @param {Function} callback callback function to be called
+  */
+  whenReady: function whenReady(callback) {
+    var _this = this;
+    if (doc.readyState == READYSTATE_COMPLETE) {
+      callback();
+    } else {
+      _this.listen(doc, READYSTATE_CHANGE, function stateChange(e) {
+        if (doc.readyState == READYSTATE_COMPLETE) {
+          callback();
+          _this.unlisten(doc, READYSTATE_CHANGE, stateChange);
+        }
+      });
+    }
+  }
+};
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _iro = __webpack_require__(1);
+var _colorPicker = __webpack_require__(8);
 
-var _iro2 = _interopRequireDefault(_iro);
+var _colorPicker2 = _interopRequireDefault(_colorPicker);
 
-var _sortablejs = __webpack_require__(2);
+var _sortablejs = __webpack_require__(15);
 
 var _sortablejs2 = _interopRequireDefault(_sortablejs);
+
+__webpack_require__(16);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -98,8 +1099,8 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 // const fs = require('fs');
 
 
-var SimpleOekakiCanvas = __webpack_require__(3);
-var utils = __webpack_require__(8);
+var SimpleOekakiCanvas = __webpack_require__(20);
+var utils = __webpack_require__(25);
 
 var SimpleOekaki = function (_SimpleOekakiCanvas) {
   _inherits(SimpleOekaki, _SimpleOekakiCanvas);
@@ -264,6 +1265,10 @@ var SimpleOekaki = function (_SimpleOekakiCanvas) {
     _this._colorMenuCloseButton.classList.add('option');
     _this._colorMenuCloseButton.innerHTML = 'close';
 
+    var colorMenuPickerRow = document.createElement('div');
+    colorMenuPickerRow.classList.add('optionsrow');
+    colorMenuPickerRow.classList.add('center');
+
     var colorPickerHolder = document.createElement('div');
     colorPickerHolder.classList.add('color-wheel-holder');
     colorPickerHolder.id = 'color-wheel-holder';
@@ -292,8 +1297,9 @@ var SimpleOekaki = function (_SimpleOekakiCanvas) {
     _this._colorMenu.appendChild(colorMenuOptionsHolder);
     colorMenuOptionsHolder.appendChild(colorMenuOptionsRow);
     colorMenuOptionsRow.appendChild(_this._colorMenuCloseButton);
-    _this._colorMenu.appendChild(colorPickerHolder);
-    _this._colorPicker = new _iro2.default.ColorPicker('#color-wheel-holder');
+    colorMenuPickerRow.appendChild(colorPickerHolder);
+    colorMenuOptionsHolder.appendChild(colorMenuPickerRow);
+    _this._colorPicker = new _colorPicker2.default('#color-wheel-holder');
 
     _this._setHTMLInputCallbacks();
     return _this;
@@ -394,36 +1400,997 @@ if (window) {
 }
 
 /***/ }),
-/* 1 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _colorPicker = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"modules/colorPicker\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+var _wheel = __webpack_require__(9);
 
-var _colorPicker2 = _interopRequireDefault(_colorPicker);
+var _wheel2 = _interopRequireDefault(_wheel);
 
-var _color = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"modules/color\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+var _slider = __webpack_require__(10);
+
+var _slider2 = _interopRequireDefault(_slider);
+
+var _dom = __webpack_require__(6);
+
+var _dom2 = _interopRequireDefault(_dom);
+
+var _color = __webpack_require__(11);
 
 var _color2 = _interopRequireDefault(_color);
 
-var _stylesheet = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"modules/stylesheet\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+var _stylesheet = __webpack_require__(14);
 
 var _stylesheet2 = _interopRequireDefault(_stylesheet);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// When the user starts to interact with a color picker's UI, a referece to that coloPicker will be stored globally
+var activeColorWheel = false;
+
+// Global mousemove + touchmove event handler
+_dom2.default.listen(document, ["mousemove", "touchmove"], function (e) {
+  // If there is an active colorWheel, call its mousemove handler
+  if (activeColorWheel) activeColorWheel._mouseMove(e);
+});
+
+// Global mouseup + touchend event handler
+_dom2.default.listen(document, ["mouseup", "touchend"], function (e) {
+  // If there is an active colorWheel, stop it from handling input and clear the active colorWheel reference
+  if (activeColorWheel) {
+    e.preventDefault();
+    activeColorWheel.emit("input:end");
+    activeColorWheel._mouseTarget = false;
+    activeColorWheel = false;
+  }
+});
+
+/**
+  @constructor color wheel object
+  @param {ElementOrString} el - a DOM element or the CSS selector for a DOM element to use as a container for the UI
+  @param {Object} opts - options for this instance
+*/
+var colorWheel = function colorWheel(el, opts) {
+  if (!(this instanceof colorWheel)) return new colorWheel(el, opts);
+  opts = opts || {};
+  // event storage for `on` and `off`
+  this._events = {};
+  this._mouseTarget = false;
+  this._onChange = false;
+  // Create an iroStyleSheet for this colorWheel's CSS overrides
+  this.stylesheet = new _stylesheet2.default();
+  this.css = opts.css || opts.styles || undefined;
+  // Create an iroColor to store this colorWheel's selected color
+  this.color = new _color2.default(opts.color || "#fff");
+
+  // Wait for the document to be ready, then init the UI
+  _dom2.default.whenReady(function () {
+    // If `el` is a string, use it to select an Element, else assume it's an element
+    el = "string" == typeof el ? _dom2.default.$(el) : el;
+    // Make sure the canvas wrapper is position:relative
+    // This is because we'll be using position:absolute to stack the canvas layers
+    el.style.cssText += "position:relative";
+    // Find the width and height for the UI
+    // If not defined in the options, try the HTML width + height attributes of the wrapper, else default to 320
+    var width = opts.width || parseInt(_dom2.default.attr(el, "width")) || 320;
+    var height = opts.height || parseInt(_dom2.default.attr(el, "height")) || 320;
+    // Create UI layers
+    // To support devices with hidpi screens, we scale the canvas so that it has more pixels, but still has the same size visually
+    // This implementation is based on https://www.html5rocks.com/en/tutorials/canvas/hidpi/
+    var pxRatio = devicePixelRatio || 1;
+    // Multiply the visual width and height by the pixel ratio
+    // These dimensions will be used as the internal pixel dimensions for the canvas
+    var pxWidth = width * pxRatio;
+    var pxHeight = height * pxRatio;
+    // When we make new layers we'll add them to this object
+    var layers = {};
+    var layerNames = ["main", "over"];
+    // Create a layer for each name
+    layerNames.forEach(function (name, index) {
+      // Create a new canvas and add it to the page
+      var canvas = _dom2.default.append(el, _dom2.default.create("canvas"));
+      var ctx = canvas.getContext("2d");
+      var style = canvas.style;
+      // Set the internal dimensions for the canvas
+      canvas.width = pxWidth;
+      canvas.height = pxHeight;
+      // Set the visual dimensions for the canvas
+      style.cssText += "width:" + width + "px;height:" + height + "px";
+      // Scale the canvas context to counter the manual scaling of the element
+      ctx.scale(pxRatio, pxRatio);
+      // Since we're creating multiple "layers" from seperate canvas we need them to be visually stacked ontop of eachother
+      // Here, any layer that isn't the first will be forced to the same position relative to their wrapper element
+      // The first layer isn't forced, so the space it takes up will still be considered in page layout
+      if (index != 0) style.cssText += "position:absolute;top:0;left:0";
+      layers[name] = {
+        ctx: ctx,
+        canvas: canvas
+      };
+    });
+    this.el = el;
+    this.layers = layers;
+    // Calculate layout variables
+    var padding = opts.padding + 2 || 6,
+        borderWidth = opts.borderWidth || 0,
+        markerRadius = opts.markerRadius || 8,
+        sliderMargin = opts.sliderMargin || 24,
+        sliderHeight = opts.sliderHeight || markerRadius * 2 + padding * 2 + borderWidth * 2,
+        bodyWidth = Math.min(height - sliderHeight - sliderMargin, width),
+        wheelRadius = bodyWidth / 2 - borderWidth,
+        leftMargin = (width - bodyWidth) / 2;
+    var marker = {
+      r: markerRadius
+    };
+    var borderStyles = {
+      w: borderWidth,
+      color: opts.borderColor || "#fff"
+    };
+    // Create UI elements
+    this.ui = [new _wheel2.default(layers, {
+      cX: leftMargin + bodyWidth / 2,
+      cY: bodyWidth / 2,
+      r: wheelRadius,
+      rMax: wheelRadius - (markerRadius + padding),
+      marker: marker,
+      border: borderStyles
+    }), new _slider2.default(layers, {
+      sliderType: "v",
+      x: leftMargin + borderWidth,
+      y: bodyWidth + sliderMargin,
+      w: bodyWidth - borderWidth * 2,
+      h: sliderHeight - borderWidth * 2,
+      r: sliderHeight / 2 - borderWidth,
+      marker: marker,
+      border: borderStyles
+    })];
+    // Whenever the selected color changes, trigger a colorWheel update too
+    this.color.watch(this._update.bind(this), true);
+    // Add handler for mousedown + touchdown events on this element
+    _dom2.default.listen(el, ["mousedown", "touchstart"], this._mouseDown.bind(this));
+  }.bind(this));
+};
+
+colorWheel.prototype = {
+  /**
+    * @desc Set a callback function that gets called whenever the selected color changes
+    * @param {Function} callback The watch callback
+    * @param {Boolean} callImmediately set to true if you want to call the callback as soon as it is added
+  */
+  watch: function watch(callback, callImmediately) {
+    this.on("color:change", callback);
+    this._onChange = callback;
+    if (callImmediately) callback(this.color);
+  },
+
+  /**
+    * @desc Remove the watch callback
+  */
+  unwatch: function unwatch() {
+    this.off("color:change", this._onChange);
+  },
+
+  /**
+    * @desc Set a callback function for an event
+    * @param {String} eventType The name of the event to listen to, pass "*" to listen to all events
+    * @param {Function} callback The watch callback
+  */
+  on: function on(eventType, callback) {
+    var events = this._events;
+    (events[eventType] || (events[eventType] = [])).push(callback);
+  },
+
+  /**
+    * @desc Remove a callback function for an event added with on()
+    * @param {String} eventType The name of the event
+    * @param {Function} callback The watch callback to remove from the event
+  */
+  off: function off(eventType, callback) {
+    var events = this._events;
+    if (events[eventType]) {
+      events[eventType].splice(events[eventType].indexOf(callback), 1);
+    }
+  },
+
+  /**
+    * @desc Emit an event
+    * @param {String} eventType The name of the event to emit
+    * @param {Object} data data to pass to all the callback functions
+  */
+  emit: function emit(eventType, data) {
+    var events = this._events;
+    (events[eventType] || []).map(function (callback) {
+      callback(data);
+    });
+    (events["*"] || []).map(function (callback) {
+      callback(data);
+    });
+  },
+
+  /**
+    * @desc Get the local-space X and Y pointer position from an input event
+    * @param {Event} e A mouse or touch event
+    * @return {Object} x and y coordinates from the top-left of the UI
+    * @access protected
+  */
+  _getLocalPoint: function _getLocalPoint(e) {
+    // Prevent default event behaviour, like scrolling
+    e.preventDefault();
+    // Detect if the event is a touch event by checking if it has the `touches` property
+    // If it is a touch event, use the first touch input
+    var point = e.touches ? e.changedTouches[0] : e,
+
+    // Get the screen position of the UI
+    rect = this.layers.main.canvas.getBoundingClientRect();
+    // Convert the screen-space pointer position to local-space
+    return {
+      x: point.clientX - rect.left,
+      y: point.clientY - rect.top
+    };
+  },
+
+  /**
+    * @desc Handle a pointer input at local-space point (x, y)
+    * @param {Event} e A mouse or touch event
+    * @return {Object} x and y coordinates from the top-left of the UI
+    * @access protected
+  */
+  _handleInput: function _handleInput(x, y) {
+    // Use the active UI element to handle translating the input to a change in the color
+    this.color.set(this._mouseTarget.input(x, y));
+  },
+
+  /**
+    * @desc mousedown event handler
+    * @param {Event} e A mouse or touch event
+    * @access protected
+  */
+  _mouseDown: function _mouseDown(e) {
+    var _this = this;
+
+    // Get the local-space position of the mouse input
+    var point = this._getLocalPoint(e),
+        x = point.x,
+        y = point.y;
+
+    // Loop through each UI element and check if the point "hits" it
+    this.ui.forEach(function (uiElement) {
+      // If the element is hit, this means the user has clicked the element and is trying to interact with it
+      if (uiElement.checkHit(x, y)) {
+        // Set a reference to this colorWheel instance so that the global event handlers know about it
+        activeColorWheel = _this;
+        // Set an internal reference to the uiElement being interacted with, for other internal event handlers
+        _this._mouseTarget = uiElement;
+        // Emit input start event
+        _this.emit("input:start");
+        // Finally, use the position to update the picked color
+        _this._handleInput(x, y);
+      }
+    });
+  },
+
+  /**
+    * @desc mousemose event handler
+    * @param {Event} e A mouse or touch event
+    * @access protected
+  */
+  _mouseMove: function _mouseMove(e) {
+    // If there is an active colorWheel (set in _mouseDown) then update the input as the user interacts with it
+    if (this == activeColorWheel) {
+      // Get the local-space position of the mouse input
+      var point = this._getLocalPoint(e);
+      // Use the position to update the picker color
+      this._handleInput(point.x, point.y);
+    }
+  },
+
+  /**
+    * @desc update the selected color
+    * @param {Object} newValue - the new HSV values
+    * @param {Object} oldValue - the old HSV values
+    * @param {Object} changes - booleans for each HSV channel: true if the new value is different to the old value, else false
+    * @access protected
+  */
+  _update: function _update(newValue, oldValue, changes) {
+    var color = this.color;
+    var rgb = color.rgbString;
+    var css = this.css;
+    // Loop through each UI element and update it
+    this.ui.forEach(function (uiElement) {
+      uiElement.update(color, changes);
+    });
+    // Update the stylesheet too
+    for (var selector in css) {
+      var properties = css[selector];
+      for (var prop in properties) {
+        this.stylesheet.setRule(selector, prop, rgb);
+      }
+    }
+    // Call the color change event
+    this.emit("color:change", color);
+  }
+};
+
+module.exports = colorWheel;
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _gradient = __webpack_require__(2);
+
+var _gradient2 = _interopRequireDefault(_gradient);
+
+var _marker = __webpack_require__(3);
+
+var _marker2 = _interopRequireDefault(_marker);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// Quick references to reused math functions
+var PI = Math.PI,
+    pow = Math.pow,
+    sqrt = Math.sqrt,
+    abs = Math.abs,
+    round = Math.round;
+
+/**
+  * @constructor hue wheel UI
+*/
+var wheel = function wheel(layers, opts) {
+  this._ctx = layers.main.ctx;
+  this._opts = opts;
+  this.type = "wheel";
+  this.marker = new _marker2.default(layers.over.ctx, opts.marker);
+};
+
+wheel.prototype = {
+
+  /**
+    * @desc redraw this UI element
+    * @param {Number} value - The hsv value component to use when drawing
+  */
+  draw: function draw(value) {
+    var ctx = this._ctx;
+    var opts = this._opts;
+    var x = opts.cX,
+        y = opts.cY,
+        border = opts.border,
+        borderWidth = border.w,
+        radius = opts.r;
+
+    // Clear the area where the wheel will be drawn
+    ctx.clearRect(x - radius - borderWidth, y - radius - borderWidth, (radius + borderWidth) * 2, (radius + borderWidth) * 2);
+
+    // Draw border
+    if (borderWidth) {
+      ctx.lineWidth = radius + borderWidth * 2;
+      ctx.strokeStyle = border.color;
+      ctx.beginPath();
+      ctx.arc(x, y, radius / 2, 0, 2 * PI);
+      ctx.stroke();
+    }
+
+    ctx.lineWidth = radius;
+
+    // The hue wheel is basically drawn with a series of thin "pie slices" - one slice for each hue degree
+    // Here we calculate the angle for each slice, in radians
+    var sliceAngle = 2 * PI / 360;
+
+    // Create a loop to draw each slice
+    for (var hue = 0, sliceStart = 0; hue < 360; hue++, sliceStart += sliceAngle) {
+      // Create a HSL color for the slice using the current hue value
+      ctx.strokeStyle = "hsl(" + hue + ",100%," + value / 2 + "%)";
+      ctx.beginPath();
+      // For whatever reason (maybe a rounding issue?) the slices had a slight gap between them, which caused rendering artifacts
+      // So we make them overlap ever so slightly by adding a tiny value to the slice angle
+      ctx.arc(x, y, radius / 2, sliceStart, sliceStart + sliceAngle + 0.04);
+      ctx.stroke();
+    }
+
+    // Create a radial gradient for "saturation"
+    var hslString = "hsla(0,0%," + value + "%,";
+    ctx.fillStyle = _gradient2.default.radial(ctx, x, y, 0, opts.rMax, {
+      // The center of the color wheel should be pure white (0% saturation)
+      0: hslString + "1)",
+      // It gradially tapers to transparent white (or, visually, 100% saturation color already drawn) at the edge of the wheel
+      1: hslString + "0)"
+    });
+    // Draw a rect using the gradient as a fill style
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  },
+
+  /**
+    * @desc updates this element to represent a new color value
+    * @param {Object} color - an iroColor object with the new color value
+    * @param {Object} changes - an object that gives a boolean for each HSV channel, indicating whether ot not that channel has changed
+  */
+  update: function update(color, changes) {
+    var opts = this._opts;
+    var hsv = color.hsv;
+    // If the V channel has changed, redraw the wheel UI with the new value
+    if (changes.v) {
+      this.draw(hsv.v);
+    }
+    // If the H or S channel has changed, move the marker to the right position
+    if (changes.h || changes.s) {
+      // convert the hue value to radians, since we'll use it as an angle
+      var hueAngle = hsv.h * (PI / 180);
+      // convert the saturation value to a distance between the center of the ring and the edge
+      var dist = hsv.s / 100 * opts.rMax;
+      // Move the marker based on the angle and distance
+      this.marker.move(opts.cX + dist * Math.cos(hueAngle), opts.cY + dist * Math.sin(hueAngle));
+    }
+  },
+
+  /**
+    * @desc Takes a point at (x, y) and returns HSV values based on this input -- use this to update a color from mouse input
+    * @param {Number} x - point x coordinate
+    * @param {Number} y - point y coordinate
+    * @return {Object} - new HSV color values (some channels may be missing)
+  */
+  input: function input(x, y) {
+    var opts = this._opts,
+        cX = opts.cX,
+        cY = opts.cY,
+        radius = opts.r,
+        rangeMax = opts.rMax;
+
+    // Angle in radians, anticlockwise starting at 12 o'clock
+    var angle = Math.atan2(x - cX, y - cY),
+
+    // Calculate the hue by converting the angle to radians, and normalising the angle to 3 o'clock
+    hue = 360 - (round(angle * (180 / PI)) + 270) % 360,
+
+    // Find the point's distance from the center of the wheel
+    // This is used to show the saturation level
+    dist = Math.min(sqrt(pow(cX - x, 2) + pow(cY - y, 2)), rangeMax);
+
+    // Return just the H and S channels, the wheel element doesn't do anything with the L channel
+    return {
+      h: hue,
+      s: round(100 / rangeMax * dist)
+    };
+  },
+
+  /**
+    * @desc Check if a point at (x, y) is inside this element
+    * @param {Number} x - point x coordinate
+    * @param {Number} y - point y coordinate
+    * @return {Boolean} - true if the point is a "hit", else false
+  */
+  checkHit: function checkHit(x, y) {
+    var opts = this._opts;
+
+    // Check if the point is within the hue ring by comparing the point's distance from the centre to the ring's radius
+    // If the distance is smaller than the radius, then we have a hit
+    var dx = abs(x - opts.cX),
+        dy = abs(y - opts.cY);
+    return sqrt(dx * dx + dy * dy) < opts.r;
+  }
+};
+
+module.exports = wheel;
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _gradient = __webpack_require__(2);
+
+var _gradient2 = _interopRequireDefault(_gradient);
+
+var _marker = __webpack_require__(3);
+
+var _marker2 = _interopRequireDefault(_marker);
+
+var _hslString = __webpack_require__(4);
+
+var _hslString2 = _interopRequireDefault(_hslString);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+  * @constructor slider UI
+*/
+var slider = function slider(layers, opts) {
+  this._ctx = layers.main.ctx;
+  opts.x1 = opts.x;
+  opts.y1 = opts.y;
+  opts.x2 = opts.x + opts.w;
+  opts.y2 = opts.y + opts.h;
+
+  // "range" limits how far the slider's marker can travel, and where it stops and starts along the X axis
+  opts.range = {
+    min: opts.x + opts.r,
+    max: opts.x2 - opts.r,
+    w: opts.w - opts.r * 2
+  };
+  opts.sliderType = opts.sliderType || "v";
+  this.type = "slider";
+  this.marker = new _marker2.default(layers.over.ctx, opts.marker);
+  this._opts = opts;
+};
+
+slider.prototype = {
+  /**
+    * @desc redraw this UI element
+  */
+  draw: function draw(hsv) {
+    var ctx = this._ctx;
+    var opts = this._opts;
+    var x1 = opts.x1,
+        y1 = opts.y1,
+        x2 = opts.x2,
+        y2 = opts.y2,
+        w = opts.w,
+        h = opts.h,
+        r = opts.r,
+        border = opts.border,
+        borderWidth = border.w;
+
+    // Clear the existing UI
+    ctx.clearRect(x1 - borderWidth, y1 - borderWidth, w + borderWidth * 2, h + borderWidth * 2);
+
+    // Draw a rounded rect
+    // Modified from http://stackoverflow.com/a/7838871
+    ctx.beginPath();
+    ctx.moveTo(x1 + r, y1);
+    ctx.arcTo(x2, y1, x2, y2, r);
+    ctx.arcTo(x2, y2, x1, y2, r);
+    ctx.arcTo(x1, y2, x1, y1, r);
+    ctx.arcTo(x1, y1, x2, y1, r);
+    ctx.closePath();
+
+    // I plan to have different slider "types" in the future
+    // (I'd like to add a transparency slider at some point, for example)
+    var fill;
+
+    // For now the only type is "V", meaning this slider adjusts the HSV V channel
+    if (opts.sliderType == "v") {
+      fill = _gradient2.default.linear(ctx, x1, y1, x2, y2, {
+        0: "#000",
+        1: _hslString2.default.fromHsv({ h: hsv.h, s: hsv.s, v: 100 })
+      });
+    }
+
+    // Draw border
+    if (borderWidth) {
+      ctx.strokeStyle = border.color;
+      ctx.lineWidth = borderWidth * 2;
+      ctx.stroke();
+    }
+
+    // Draw gradient
+    ctx.fillStyle = fill;
+    ctx.fill();
+  },
+
+  /**
+    * @desc updates this element to represent a new color value
+    * @param {Object} color - an iroColor object with the new color value
+    * @param {Object} changes - an object that gives a boolean for each HSV channel, indicating whether ot not that channel has changed
+  */
+  update: function update(color, changes) {
+    var opts = this._opts;
+    var range = opts.range;
+    var hsv = color.hsv;
+    if (opts.sliderType == "v") {
+      if (changes.h || changes.s) {
+        this.draw(hsv);
+      }
+      if (changes.v) {
+        var percent = hsv.v / 100;
+        this.marker.move(range.min + percent * range.w, opts.y1 + opts.h / 2);
+      }
+    }
+  },
+
+  /**
+    * @desc Takes a point at (x, y) and returns HSV values based on this input -- use this to update a color from mouse input
+    * @param {Number} x - point x coordinate
+    * @param {Number} y - point y coordinate
+    * @return {Object} - new HSV color values (some channels may be missing)
+  */
+  input: function input(x, y) {
+    var opts = this._opts;
+    var range = opts.range;
+    var dist = Math.max(Math.min(x, range.max), range.min) - range.min;
+    return {
+      v: Math.round(100 / range.w * dist)
+    };
+  },
+
+  /**
+    * @desc Check if a point at (x, y) is inside this element
+    * @param {Number} x - point x coordinate
+    * @param {Number} y - point y coordinate
+    * @return {Boolean} - true if the point is a "hit", else false
+  */
+  checkHit: function checkHit(x, y) {
+    var opts = this._opts;
+    return x > opts.x1 && x < opts.x2 && y > opts.y1 && y < opts.y2;
+  }
+};
+
+module.exports = slider;
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _hsl = __webpack_require__(5);
+
+var _hsl2 = _interopRequireDefault(_hsl);
+
+var _rgb = __webpack_require__(0);
+
+var _rgb2 = _interopRequireDefault(_rgb);
+
+var _hslString = __webpack_require__(4);
+
+var _hslString2 = _interopRequireDefault(_hslString);
+
+var _rgbString = __webpack_require__(12);
+
+var _rgbString2 = _interopRequireDefault(_rgbString);
+
+var _hexString = __webpack_require__(13);
+
+var _hexString2 = _interopRequireDefault(_hexString);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var colorModels = [_hsl2.default, _rgb2.default, _hslString2.default, _rgbString2.default, _hexString2.default];
+
+/**
+  @constructor color object
+  @param {String} str (optional) CSS color string to use as the start color for this element
+*/
+var color = function color(str) {
+  var _this = this;
+
+  if (!(this instanceof color)) return new color(str);
+  // The watch callback function for this color will be stored here
+  this._onChange = false;
+  // The default color value
+  this._value = { h: undefined, s: undefined, v: undefined };
+  this.register("hsv", {
+    get: this.get,
+    set: this.set
+  });
+  // Loop through each external color model and register it
+  colorModels.forEach(function (model) {
+    _this.register(model.name, {
+      set: function set(value) {
+        this.hsv = model.toHsv(value);
+      },
+      get: function get() {
+        return model.fromHsv(this.hsv);
+      }
+    });
+  });
+  if (str) this.fromString(str);
+};
+
+color.prototype = {
+
+  /**
+    * @desc Register a new color model on this instance
+    * @param {String} name The name of the color model
+    * @param {Object} descriptor The property descriptor (see https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty#Description)
+  */
+  register: function register(name, descriptor) {
+    Object.defineProperty(this, name, descriptor);
+  },
+
+  /**
+    * @desc Set a callback function that gets called whenever the selected color changes
+    * @param {Function} callback The watch callback
+    * @param {Boolean} callImmediately set to true if you want to call the callback as soon as it is added
+  */
+  watch: function watch(callback, callImmediately) {
+    this._onChange = callback;
+    if (callImmediately) this.forceUpdate();
+  },
+
+  /**
+    * @desc Remove the watch callback
+  */
+  unwatch: function unwatch() {
+    this.watch(false);
+  },
+
+  /**
+    * @desc Force an update
+  */
+  forceUpdate: function forceUpdate() {
+    var value = this._value;
+    this._onChange(value, value, { h: true, s: true, v: true });
+  },
+
+  /**
+    * @desc Set the color from a HSV value
+    * @param {Object} newValue - HSV object
+  */
+  set: function set(newValue) {
+    // Loop through the channels and check if any of them have changed
+    var changes = {};
+    var oldValue = this._value;
+    for (var channel in oldValue) {
+      if (!newValue.hasOwnProperty(channel)) newValue[channel] = oldValue[channel];
+      changes[channel] = !(newValue[channel] == oldValue[channel]);
+    }
+    // Update the old value
+    this._value = newValue;
+    // If the value has changed, call hook callback
+    var callback = this._onChange;
+    if ((changes.h || changes.s || changes.v) && "function" == typeof callback) callback(newValue, oldValue, changes);
+  },
+
+  /**
+    * @desc Get the HSV value
+    * @return HSV object
+  */
+  get: function get() {
+    return this._value;
+  },
+
+  /**
+    * @desc Set the color from a CSS string
+    * @param {String} str - HEX, rgb, or hsl color string
+  */
+  fromString: function fromString(str) {
+    if (/^rgb/.test(str)) {
+      this.rgbString = str;
+    } else if (/^hsl/.test(str)) {
+      this.hslString = str;
+    } else if (/^#[0-9A-Fa-f]/.test(str)) {
+      this.hexString = str;
+    }
+  }
+};
+
+module.exports = color;
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _rgb = __webpack_require__(0);
+
+var _rgb2 = _interopRequireDefault(_rgb);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 module.exports = {
-  Color: _color2.default,
-  ColorPicker: _colorPicker2.default,
-  Stylesheet: _stylesheet2.default,
-  // for backwards compat
-  ColorWheel: _colorPicker2.default
+  name: "rgbString",
+
+  fromHsv: function fromHsv(hsv) {
+    var color = _rgb2.default.fromHsv(hsv);
+    return "rgb" + (color.a ? "a" : "") + "(" + color.r + ", " + color.g + ", " + color.b + (color.a ? ", " + color.a : "") + ")";
+  },
+
+  toHsv: function toHsv(rgbString) {
+    var parsed = rgbString.match(/(rgba?)\((\d+)(?:\D+?)(\d+)(?:\D+?)(\d+)(?:\D+?)?([0-9\.]+?)?\)/i);
+    return _rgb2.default.toHsv({
+      r: parseInt(parsed[2]),
+      g: parseInt(parsed[3]),
+      b: parseInt(parsed[4])
+    });
+  }
 };
 
 /***/ }),
-/* 2 */
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _rgb = __webpack_require__(0);
+
+var _rgb2 = _interopRequireDefault(_rgb);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+module.exports = {
+  name: "hexString",
+
+  fromHsv: function fromHsv(hsv) {
+    var color = _rgb2.default.fromHsv(hsv),
+        r = color.r,
+        g = color.g,
+        b = color.b;
+    // If each RGB channel's value is a multiple of 17, we can use HEX shorthand notation
+    var useShorthand = r % 17 == 0 && g % 17 == 0 && b % 17 == 0,
+
+    // If we're using shorthand notation, divide each channel by 17
+    divider = useShorthand ? 17 : 1,
+
+    // bitLength of each channel (for example, F is 4 bits long while FF is 8 bits long)
+    bitLength = useShorthand ? 4 : 8,
+
+    // Target length of the string (ie "#FFF" or "#FFFFFF")
+    strLength = useShorthand ? 4 : 7,
+
+    // Combine the channels together into a single integer
+    int = r / divider << bitLength * 2 | g / divider << bitLength | b / divider,
+
+    // Convert that integer to a hex string
+    str = int.toString(16);
+    // Add right amount of left-padding
+    return "#" + new Array(strLength - str.length).join("0") + str;
+  },
+
+  toHsv: function toHsv(hex) {
+    // Strip any "#" characters
+    hex = hex.replace(/#/g, '');
+    // Prefix the hex string with "0x" which indicates a number in hex notation, then convert to an integer
+    var int = parseInt("0x" + hex),
+
+    // If the length of the input is only 3, then it is a shorthand hex color
+    isShorthand = hex.length == 3,
+
+    // bitMask for isolating each channel
+    bitMask = isShorthand ? 0xF : 0xFF,
+
+    // bitLength of each channel (for example, F is 4 bits long while FF is 8 bits long)
+    bitLength = isShorthand ? 4 : 8,
+
+    // If we're using shorthand notation, multiply each channel by 17
+    multiplier = isShorthand ? 17 : 1;
+
+    return _rgb2.default.toHsv({
+      r: (int >> bitLength * 2 & bitMask) * multiplier,
+      g: (int >> bitLength & bitMask) * multiplier,
+      b: (int & bitMask) * multiplier
+    });
+  }
+};
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _dom = __webpack_require__(6);
+
+var _dom2 = _interopRequireDefault(_dom);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var doc = document;
+
+/**
+  @constructor stylesheet writer
+  @param {Object} overrides - an object representing the CSS rules that this stylesheet updates
+*/
+var stylesheet = function stylesheet(overrides) {
+  // Create a new style element
+  var style = _dom2.default.create("style");
+  // Webkit apparently requires a text node to be inserted into the style element
+  // (according to https://davidwalsh.name/add-rules-stylesheets)
+  _dom2.default.append(style, doc.createTextNode(""));
+  // Add that stylesheet to the document <head></head>
+  _dom2.default.append(doc.head, style);
+  this.style = style;
+  // Create a reference to the style element's CSSStyleSheet object
+  // CSSStyleSheet API: https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet
+  var sheet = style.sheet;
+  this.sheet = sheet;
+  // Get a reference to the sheet's CSSRuleList object
+  // CSSRuleList API: https://developer.mozilla.org/en-US/docs/Web/API/CSSRuleList
+  this.rules = sheet.rules || sheet.cssRules;
+  // We'll store references to all the CSSStyleDeclaration objects that we change here, keyed by the CSS selector they belong to
+  // CSSStyleDeclaration API: https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration
+  this.map = {};
+};
+
+stylesheet.prototype = {
+
+  /**
+    * @desc Turns the stylesheet "on", allowing the styles to be rendered
+  */
+  on: function on() {
+    this.sheet.disabled = false;
+  },
+
+  /**
+    * @desc Turns the stylesheet "off", preventing the styles from being rendered
+  */
+  off: function off() {
+    this.sheet.disabled = true;
+  },
+
+  /**
+    * @desc Set a specific rule for a given selector
+    * @param {String} selector - the CSS selector for this rule (e.g. "body", ".class", "#id")
+    * @param {String} property - the CSS property to set (e.g. "background-color", "font-family", "z-index")
+    * @param {String} value    - the new value for the rule (e.g. "rgb(255, 255, 255)", "Helvetica", "99")
+  */
+  setRule: function setRule(selector, property, value) {
+    var sheet = this.sheet;
+    var rules = sheet.rules || sheet.cssRules;
+    var map = this.map;
+    // Convert property from camelCase to snake-case
+    property = property.replace(/([A-Z])/g, function ($1) {
+      return "-" + $1.toLowerCase();
+    });
+    if (!map.hasOwnProperty(selector)) {
+      // If the selector hasn't been used yet we want to insert the rule at the end of the CSSRuleList, so we use its length as the index value
+      var index = rules.length;
+      // Prepare the rule declaration text, since both insertRule and addRule take this format
+      var declaration = property + ": " + value;
+      // Insert the new rule into the stylesheet
+      try {
+        // Some browsers only support insertRule, others only support addRule, so we have to use both
+        sheet.insertRule(selector + " {" + declaration + ";}", index);
+      } catch (e) {
+        sheet.addRule(selector, declaration, index);
+      } finally {
+        // Because safari is perhaps the worst browser in all of history, we have to remind it to keep the sheet rules up-to-date
+        rules = sheet.rules || sheet.cssRules;
+        // Add our newly inserted rule's CSSStyleDeclaration object to the internal map
+        map[selector] = rules[index].style;
+      }
+    } else {
+      map[selector].setProperty(property, value);
+    }
+  },
+
+  /**
+    * @desc Get an object representing the current css styles
+    * @return {Object} css object
+  */
+  getCss: function getCss() {
+    var map = this.map;
+    var ret = {};
+    for (var selector in map) {
+      var ruleSet = map[selector];
+      ret[selector] = {};
+      for (var i = 0; i < ruleSet.length; i++) {
+        var property = ruleSet[i];
+        ret[selector][property] = ruleSet.getPropertyValue(property);
+      }
+    }
+    return ret;
+  },
+
+  /**
+    * @desc Get the stylesheet text
+    * @return {String} css text
+  */
+  getCssText: function getCssText() {
+    var map = this.map;
+    var ret = [];
+    for (var selector in map) {
+      ret.push(selector.replace(/,\W/g, ",\n") + " {\n\t" + map[selector].cssText.replace(/;\W/g, ";\n\t") + "\n}");
+    }
+    return ret.join("\n");
+  }
+};
+
+module.exports = stylesheet;
+
+/***/ }),
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1801,7 +3768,587 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 });
 
 /***/ }),
-/* 3 */
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(1);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(18)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(true) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept(1, function() {
+			var newContent = __webpack_require__(1);
+			if(typeof newContent === 'string') newContent = [[module.i, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+// css base code, injected by the css-loader
+module.exports = function (useSourceMap) {
+	var list = [];
+
+	// return the list of modules as css string
+	list.toString = function toString() {
+		return this.map(function (item) {
+			var content = cssWithMappingToString(item, useSourceMap);
+			if (item[2]) {
+				return "@media " + item[2] + "{" + content + "}";
+			} else {
+				return content;
+			}
+		}).join("");
+	};
+
+	// import a list of modules into the list
+	list.i = function (modules, mediaQuery) {
+		if (typeof modules === "string") modules = [[null, modules, ""]];
+		var alreadyImportedModules = {};
+		for (var i = 0; i < this.length; i++) {
+			var id = this[i][0];
+			if (typeof id === "number") alreadyImportedModules[id] = true;
+		}
+		for (i = 0; i < modules.length; i++) {
+			var item = modules[i];
+			// skip already imported module
+			// this implementation is not 100% perfect for weird media query combinations
+			//  when a module is imported multiple times with different media queries.
+			//  I hope this will never occur (Hey this way we have smaller bundles)
+			if (typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
+				if (mediaQuery && !item[2]) {
+					item[2] = mediaQuery;
+				} else if (mediaQuery) {
+					item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
+				}
+				list.push(item);
+			}
+		}
+	};
+	return list;
+};
+
+function cssWithMappingToString(item, useSourceMap) {
+	var content = item[1] || '';
+	var cssMapping = item[3];
+	if (!cssMapping) {
+		return content;
+	}
+
+	if (useSourceMap && typeof btoa === 'function') {
+		var sourceMapping = toComment(cssMapping);
+		var sourceURLs = cssMapping.sources.map(function (source) {
+			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */';
+		});
+
+		return [content].concat(sourceURLs).concat([sourceMapping]).join('\n');
+	}
+
+	return [content].join('\n');
+}
+
+// Adapted from convert-source-map (MIT)
+function toComment(sourceMap) {
+	// eslint-disable-next-line no-undef
+	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
+	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
+
+	return '/*# ' + data + ' */';
+}
+
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+
+var stylesInDom = {};
+
+var	memoize = function (fn) {
+	var memo;
+
+	return function () {
+		if (typeof memo === "undefined") memo = fn.apply(this, arguments);
+		return memo;
+	};
+};
+
+var isOldIE = memoize(function () {
+	// Test for IE <= 9 as proposed by Browserhacks
+	// @see http://browserhacks.com/#hack-e71d8692f65334173fee715c222cb805
+	// Tests for existence of standard globals is to allow style-loader
+	// to operate correctly into non-standard environments
+	// @see https://github.com/webpack-contrib/style-loader/issues/177
+	return window && document && document.all && !window.atob;
+});
+
+var getElement = (function (fn) {
+	var memo = {};
+
+	return function(selector) {
+		if (typeof memo[selector] === "undefined") {
+			var styleTarget = fn.call(this, selector);
+			// Special case to return head of iframe instead of iframe itself
+			if (styleTarget instanceof window.HTMLIFrameElement) {
+				try {
+					// This will throw an exception if access to iframe is blocked
+					// due to cross-origin restrictions
+					styleTarget = styleTarget.contentDocument.head;
+				} catch(e) {
+					styleTarget = null;
+				}
+			}
+			memo[selector] = styleTarget;
+		}
+		return memo[selector]
+	};
+})(function (target) {
+	return document.querySelector(target)
+});
+
+var singleton = null;
+var	singletonCounter = 0;
+var	stylesInsertedAtTop = [];
+
+var	fixUrls = __webpack_require__(19);
+
+module.exports = function(list, options) {
+	if (typeof DEBUG !== "undefined" && DEBUG) {
+		if (typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
+	}
+
+	options = options || {};
+
+	options.attrs = typeof options.attrs === "object" ? options.attrs : {};
+
+	// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
+	// tags it will allow on a page
+	if (!options.singleton) options.singleton = isOldIE();
+
+	// By default, add <style> tags to the <head> element
+	if (!options.insertInto) options.insertInto = "head";
+
+	// By default, add <style> tags to the bottom of the target
+	if (!options.insertAt) options.insertAt = "bottom";
+
+	var styles = listToStyles(list, options);
+
+	addStylesToDom(styles, options);
+
+	return function update (newList) {
+		var mayRemove = [];
+
+		for (var i = 0; i < styles.length; i++) {
+			var item = styles[i];
+			var domStyle = stylesInDom[item.id];
+
+			domStyle.refs--;
+			mayRemove.push(domStyle);
+		}
+
+		if(newList) {
+			var newStyles = listToStyles(newList, options);
+			addStylesToDom(newStyles, options);
+		}
+
+		for (var i = 0; i < mayRemove.length; i++) {
+			var domStyle = mayRemove[i];
+
+			if(domStyle.refs === 0) {
+				for (var j = 0; j < domStyle.parts.length; j++) domStyle.parts[j]();
+
+				delete stylesInDom[domStyle.id];
+			}
+		}
+	};
+};
+
+function addStylesToDom (styles, options) {
+	for (var i = 0; i < styles.length; i++) {
+		var item = styles[i];
+		var domStyle = stylesInDom[item.id];
+
+		if(domStyle) {
+			domStyle.refs++;
+
+			for(var j = 0; j < domStyle.parts.length; j++) {
+				domStyle.parts[j](item.parts[j]);
+			}
+
+			for(; j < item.parts.length; j++) {
+				domStyle.parts.push(addStyle(item.parts[j], options));
+			}
+		} else {
+			var parts = [];
+
+			for(var j = 0; j < item.parts.length; j++) {
+				parts.push(addStyle(item.parts[j], options));
+			}
+
+			stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
+		}
+	}
+}
+
+function listToStyles (list, options) {
+	var styles = [];
+	var newStyles = {};
+
+	for (var i = 0; i < list.length; i++) {
+		var item = list[i];
+		var id = options.base ? item[0] + options.base : item[0];
+		var css = item[1];
+		var media = item[2];
+		var sourceMap = item[3];
+		var part = {css: css, media: media, sourceMap: sourceMap};
+
+		if(!newStyles[id]) styles.push(newStyles[id] = {id: id, parts: [part]});
+		else newStyles[id].parts.push(part);
+	}
+
+	return styles;
+}
+
+function insertStyleElement (options, style) {
+	var target = getElement(options.insertInto)
+
+	if (!target) {
+		throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");
+	}
+
+	var lastStyleElementInsertedAtTop = stylesInsertedAtTop[stylesInsertedAtTop.length - 1];
+
+	if (options.insertAt === "top") {
+		if (!lastStyleElementInsertedAtTop) {
+			target.insertBefore(style, target.firstChild);
+		} else if (lastStyleElementInsertedAtTop.nextSibling) {
+			target.insertBefore(style, lastStyleElementInsertedAtTop.nextSibling);
+		} else {
+			target.appendChild(style);
+		}
+		stylesInsertedAtTop.push(style);
+	} else if (options.insertAt === "bottom") {
+		target.appendChild(style);
+	} else if (typeof options.insertAt === "object" && options.insertAt.before) {
+		var nextSibling = getElement(options.insertInto + " " + options.insertAt.before);
+		target.insertBefore(style, nextSibling);
+	} else {
+		throw new Error("[Style Loader]\n\n Invalid value for parameter 'insertAt' ('options.insertAt') found.\n Must be 'top', 'bottom', or Object.\n (https://github.com/webpack-contrib/style-loader#insertat)\n");
+	}
+}
+
+function removeStyleElement (style) {
+	if (style.parentNode === null) return false;
+	style.parentNode.removeChild(style);
+
+	var idx = stylesInsertedAtTop.indexOf(style);
+	if(idx >= 0) {
+		stylesInsertedAtTop.splice(idx, 1);
+	}
+}
+
+function createStyleElement (options) {
+	var style = document.createElement("style");
+
+	options.attrs.type = "text/css";
+
+	addAttrs(style, options.attrs);
+	insertStyleElement(options, style);
+
+	return style;
+}
+
+function createLinkElement (options) {
+	var link = document.createElement("link");
+
+	options.attrs.type = "text/css";
+	options.attrs.rel = "stylesheet";
+
+	addAttrs(link, options.attrs);
+	insertStyleElement(options, link);
+
+	return link;
+}
+
+function addAttrs (el, attrs) {
+	Object.keys(attrs).forEach(function (key) {
+		el.setAttribute(key, attrs[key]);
+	});
+}
+
+function addStyle (obj, options) {
+	var style, update, remove, result;
+
+	// If a transform function was defined, run it on the css
+	if (options.transform && obj.css) {
+	    result = options.transform(obj.css);
+
+	    if (result) {
+	    	// If transform returns a value, use that instead of the original css.
+	    	// This allows running runtime transformations on the css.
+	    	obj.css = result;
+	    } else {
+	    	// If the transform function returns a falsy value, don't add this css.
+	    	// This allows conditional loading of css
+	    	return function() {
+	    		// noop
+	    	};
+	    }
+	}
+
+	if (options.singleton) {
+		var styleIndex = singletonCounter++;
+
+		style = singleton || (singleton = createStyleElement(options));
+
+		update = applyToSingletonTag.bind(null, style, styleIndex, false);
+		remove = applyToSingletonTag.bind(null, style, styleIndex, true);
+
+	} else if (
+		obj.sourceMap &&
+		typeof URL === "function" &&
+		typeof URL.createObjectURL === "function" &&
+		typeof URL.revokeObjectURL === "function" &&
+		typeof Blob === "function" &&
+		typeof btoa === "function"
+	) {
+		style = createLinkElement(options);
+		update = updateLink.bind(null, style, options);
+		remove = function () {
+			removeStyleElement(style);
+
+			if(style.href) URL.revokeObjectURL(style.href);
+		};
+	} else {
+		style = createStyleElement(options);
+		update = applyToTag.bind(null, style);
+		remove = function () {
+			removeStyleElement(style);
+		};
+	}
+
+	update(obj);
+
+	return function updateStyle (newObj) {
+		if (newObj) {
+			if (
+				newObj.css === obj.css &&
+				newObj.media === obj.media &&
+				newObj.sourceMap === obj.sourceMap
+			) {
+				return;
+			}
+
+			update(obj = newObj);
+		} else {
+			remove();
+		}
+	};
+}
+
+var replaceText = (function () {
+	var textStore = [];
+
+	return function (index, replacement) {
+		textStore[index] = replacement;
+
+		return textStore.filter(Boolean).join('\n');
+	};
+})();
+
+function applyToSingletonTag (style, index, remove, obj) {
+	var css = remove ? "" : obj.css;
+
+	if (style.styleSheet) {
+		style.styleSheet.cssText = replaceText(index, css);
+	} else {
+		var cssNode = document.createTextNode(css);
+		var childNodes = style.childNodes;
+
+		if (childNodes[index]) style.removeChild(childNodes[index]);
+
+		if (childNodes.length) {
+			style.insertBefore(cssNode, childNodes[index]);
+		} else {
+			style.appendChild(cssNode);
+		}
+	}
+}
+
+function applyToTag (style, obj) {
+	var css = obj.css;
+	var media = obj.media;
+
+	if(media) {
+		style.setAttribute("media", media)
+	}
+
+	if(style.styleSheet) {
+		style.styleSheet.cssText = css;
+	} else {
+		while(style.firstChild) {
+			style.removeChild(style.firstChild);
+		}
+
+		style.appendChild(document.createTextNode(css));
+	}
+}
+
+function updateLink (link, options, obj) {
+	var css = obj.css;
+	var sourceMap = obj.sourceMap;
+
+	/*
+		If convertToAbsoluteUrls isn't defined, but sourcemaps are enabled
+		and there is no publicPath defined then lets turn convertToAbsoluteUrls
+		on by default.  Otherwise default to the convertToAbsoluteUrls option
+		directly
+	*/
+	var autoFixUrls = options.convertToAbsoluteUrls === undefined && sourceMap;
+
+	if (options.convertToAbsoluteUrls || autoFixUrls) {
+		css = fixUrls(css);
+	}
+
+	if (sourceMap) {
+		// http://stackoverflow.com/a/26603875
+		css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
+	}
+
+	var blob = new Blob([css], { type: "text/css" });
+
+	var oldSrc = link.href;
+
+	link.href = URL.createObjectURL(blob);
+
+	if(oldSrc) URL.revokeObjectURL(oldSrc);
+}
+
+
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * When source maps are enabled, `style-loader` uses a link element with a data-uri to
+ * embed the css on the page. This breaks all relative urls because now they are relative to a
+ * bundle instead of the current page.
+ *
+ * One solution is to only use full urls, but that may be impossible.
+ *
+ * Instead, this function "fixes" the relative urls to be absolute according to the current page location.
+ *
+ * A rudimentary test suite is located at `test/fixUrls.js` and can be run via the `npm test` command.
+ *
+ */
+
+module.exports = function (css) {
+	// get current location
+	var location = typeof window !== "undefined" && window.location;
+
+	if (!location) {
+		throw new Error("fixUrls requires window.location");
+	}
+
+	// blank or null?
+	if (!css || typeof css !== "string") {
+		return css;
+	}
+
+	var baseUrl = location.protocol + "//" + location.host;
+	var currentDir = baseUrl + location.pathname.replace(/\/[^\/]*$/, "/");
+
+	// convert each url(...)
+	/*
+ This regular expression is just a way to recursively match brackets within
+ a string.
+ 	 /url\s*\(  = Match on the word "url" with any whitespace after it and then a parens
+    (  = Start a capturing group
+      (?:  = Start a non-capturing group
+          [^)(]  = Match anything that isn't a parentheses
+          |  = OR
+          \(  = Match a start parentheses
+              (?:  = Start another non-capturing groups
+                  [^)(]+  = Match anything that isn't a parentheses
+                  |  = OR
+                  \(  = Match a start parentheses
+                      [^)(]*  = Match anything that isn't a parentheses
+                  \)  = Match a end parentheses
+              )  = End Group
+              *\) = Match anything and then a close parens
+          )  = Close non-capturing group
+          *  = Match anything
+       )  = Close capturing group
+  \)  = Match a close parens
+ 	 /gi  = Get all matches, not the first.  Be case insensitive.
+  */
+	var fixedCss = css.replace(/url\s*\(((?:[^)(]|\((?:[^)(]+|\([^)(]*\))*\))*)\)/gi, function (fullMatch, origUrl) {
+		// strip quotes (if they exist)
+		var unquotedOrigUrl = origUrl.trim().replace(/^"(.*)"$/, function (o, $1) {
+			return $1;
+		}).replace(/^'(.*)'$/, function (o, $1) {
+			return $1;
+		});
+
+		// already a full url? no change
+		if (/^(#|data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(unquotedOrigUrl)) {
+			return fullMatch;
+		}
+
+		// convert the url to a full url
+		var newUrl;
+
+		if (unquotedOrigUrl.indexOf("//") === 0) {
+			//TODO: should we add protocol?
+			newUrl = unquotedOrigUrl;
+		} else if (unquotedOrigUrl.indexOf("/") === 0) {
+			// path should be relative to the base url
+			newUrl = baseUrl + unquotedOrigUrl; // already starts with '/'
+		} else {
+			// path should be relative to current directory
+			newUrl = currentDir + unquotedOrigUrl.replace(/^\.\//, ""); // Strip leading './'
+		}
+
+		// send back the fixed url(...)
+		return "url(" + JSON.stringify(newUrl) + ")";
+	});
+
+	// send back the fixed css
+	return fixedCss;
+};
+
+/***/ }),
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1809,19 +4356,19 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _canvas = __webpack_require__(4);
+var _canvas = __webpack_require__(21);
 
 var _canvas2 = _interopRequireDefault(_canvas);
 
-var _canvas3 = __webpack_require__(5);
+var _canvas3 = __webpack_require__(22);
 
 var _canvas4 = _interopRequireDefault(_canvas3);
 
-var _layer = __webpack_require__(6);
+var _layer = __webpack_require__(23);
 
 var _layer2 = _interopRequireDefault(_layer);
 
-var _layer3 = __webpack_require__(7);
+var _layer3 = __webpack_require__(24);
 
 var _layer4 = _interopRequireDefault(_layer3);
 
@@ -2121,31 +4668,31 @@ if (window) {
 }
 
 /***/ }),
-/* 4 */
+/* 21 */
 /***/ (function(module, exports) {
 
 module.exports = "attribute vec2 position;\nvarying vec2 Texcoord;\nvoid main(void) {\n  Texcoord = (position+1.0) / 2.0;\n  gl_Position = vec4(position, 0.0, 1.0);\n}"
 
 /***/ }),
-/* 5 */
+/* 22 */
 /***/ (function(module, exports) {
 
 module.exports = "precision mediump float;\n\nvarying vec2 Texcoord;\nuniform vec3 backgroundColor;\nuniform sampler2D imageTex;\n\nuniform ivec3 layerOrder;\nuniform vec3 layerVisibility;\nuniform mat3 layerColors;\n\nvoid main(void){\n  vec4 texColor = texture2D(imageTex,Texcoord);\n\n  vec3 outputColor = backgroundColor;\n\n  for(int i = 0; i < 3; i++){\n    int currentLayer = layerOrder[i];\n\n  if(currentLayer == 0){\n      vec3 currentColor = layerColors[0];\n      float currentSet = texColor[0];\n      currentSet = currentSet * layerVisibility[0];\n      outputColor = currentSet * currentColor + outputColor * (1.0-currentSet); \n    } else if(currentLayer == 1){\n      vec3 currentColor = layerColors[1];\n      float currentSet = texColor[1];\n      currentSet = currentSet * layerVisibility[1];\n      outputColor = currentSet * currentColor + outputColor * (1.0-currentSet);\n    } else {\n      vec3 currentColor = layerColors[2];\n      float currentSet = texColor[2];\n      currentSet = currentSet * layerVisibility[2];\n      outputColor = currentSet * currentColor + outputColor * (1.0-currentSet);\n    }\n  }\n  gl_FragColor = vec4(outputColor,1.0);\n}"
 
 /***/ }),
-/* 6 */
+/* 23 */
 /***/ (function(module, exports) {
 
 module.exports = "attribute vec2 position;\nvoid main(void) {\n  gl_Position = vec4(position, 0.0, 1.0);\n}"
 
 /***/ }),
-/* 7 */
+/* 24 */
 /***/ (function(module, exports) {
 
 module.exports = "precision mediump float;\n\nuniform vec4 line;\nuniform float size;\n\nvoid main(void){\n  float x = gl_FragCoord.x;\n  float y = gl_FragCoord.y;\n  \n  float x1 = line[0];\n  float y1 = line[1];\n  float x2 = line[2];\n  float y2 = line[3];\n\n  float A = x - x1;\n  float B = y - y1;\n  float C = x2 - x1;\n  float D = y2 - y1;\n  \n  float dot = A * C + B * D;\n  float len_sq = C * C + D * D;\n  float param = -1.0;\n  if (len_sq != 0.0) //in case of 0 length line\n      param = dot / len_sq;\n  \n  float xx, yy;\n  \n  if (param < 0.0){\n    xx = x1;\n    yy = y1;\n  } else if(param > 1.0){\n    xx = x2;\n    yy = y2;\n  } else if(abs(C) > abs(D)){\n    xx = floor(x1 + param * C) + 0.5;\n    yy = floor(y1 + (xx - x1) / C * D) + 0.5;\n  }else{\n    yy = floor(y1 + param * D) + 0.5;\n    xx = floor(x1 + (yy - y1) / D * C) +0.5;\n  }\n  float d = distance(vec2(x,y),vec2(xx,yy));\n\n  if(d > size/2.0) discard;\n\n  gl_FragColor = vec4(1.0,1.0,1.0,1.0);\n}"
 
 /***/ }),
-/* 8 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
