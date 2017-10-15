@@ -79,7 +79,7 @@ $so-color-menu-height: 400px !default;
 		right: 0px;
 		height: 100%;
 		width: $so-layer-menu-width;
-		transition: all 1s;
+		transition: all 0.2s;
 		background: $so-foreground-color;
 		border-left: 4px dashed $so-background-color;
 		box-sizing:border-box;
@@ -111,7 +111,7 @@ $so-color-menu-height: 400px !default;
 		bottom: 0px;
 		width: 100%;
 		height: $so-color-menu-height;
-		transition: all 1s;
+		transition: all 0.2s;
 		background: blue;
 		&.hidden {
 			margin-bottom: -$so-color-menu-height;

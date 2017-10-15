@@ -5,8 +5,8 @@
   "main": "src/SimpleOekaki.js",
   "repository": "https://github.com/Sind/SimpleOekaki.git",
   "scripts": {
-    "build": "webpack",
-    "dev": "webpack --env=dev --hot --progress --colors"
+    "build": "webpack --hot --progress --colors",
+    "dev": "webpack-dev-server --env=dev --hot --progress --colors"
   },
   "author": "Sind",
   "license": "GPL-3.0",

@@ -49,7 +49,7 @@ class SimpleOekakiCanvas {
   }
   set backgroundColor(colorArray) {
     this._backgroundColor = colorArray;
-    console.log('backgroundColor set:', this.backgroundColor);
+    // console.log('backgroundColor set:', this.backgroundColor);
   }
 
   get currentLayer() {
@@ -77,7 +77,7 @@ class SimpleOekakiCanvas {
     if (this._diameter > MAX_BRUSH_SIZE) {
       this._diameter = MAX_BRUSH_SIZE;
     }
-    console.log('brush size changed to', this._diameter);
+    // console.log('brush size changed to', this._diameter);
     if (this._onBrushSizeChange) this._onBrushSizeChange(this._diameter);
   }
 
@@ -128,8 +128,8 @@ class SimpleOekakiCanvas {
     this._gl.shaderSource(shader, str);
     this._gl.compileShader(shader);
     if (!this._gl.getShaderParameter(shader, this._gl.COMPILE_STATUS)) {
-      console.log('JS:Shader compile failed');
-      console.log(this._gl.getShaderInfoLog(shader));
+      // console.log('JS:Shader compile failed');
+      // console.log(this._gl.getShaderInfoLog(shader));
       return null;
     }
     return shader;
@@ -189,8 +189,8 @@ class SimpleOekakiCanvas {
     this._gl.attachShader(shaderProgram, fragmentShader);
     this._gl.linkProgram(shaderProgram);
     if (!this._gl.getProgramParameter(shaderProgram, this._gl.LINK_STATUS)) {
-      console.log('Could not initialise shaders');
-      console.log(this._gl.getProgramInfoLog(shaderProgram));
+      // console.log('Could not initialise shaders');
+      // console.log(this._gl.getProgramInfoLog(shaderProgram));
     }
     this._gl.useProgram(shaderProgram);
     const VertexPositionAttribute = this._gl.getAttribLocation(shaderProgram, 'position');

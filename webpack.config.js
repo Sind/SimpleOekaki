@@ -84,12 +84,7 @@ module.exports = function (env) {
     config.plugins = config.plugins.concat([
       new webpack.optimize.UglifyJsPlugin({
         sourceMap: true,
-        mangle: {
-          props: {
-            // Mangle protected properties (which start with "_"), and combine all the ones listed in the config
-            regex: new RegExp("^_|" + mangleProps.join("$|"))
-          }
-        }
+        mangle: false
       })
     ]);
   }
