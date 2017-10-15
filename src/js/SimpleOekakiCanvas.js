@@ -1,4 +1,9 @@
-const fs = require('fs');
+
+
+import CANVAS_V_SHADER from '../glsl/canvas.vsh';
+import CANVAS_F_SHADER from '../glsl/canvas.fsh';
+import LAYER_V_SHADER from '../glsl/layer.vsh';
+import LAYER_F_SHADER from '../glsl/layer.fsh';
 
 const VERSION = '0.2.1';
 const MIN_BRUSH_SIZE = 1;
@@ -73,10 +78,16 @@ class SimpleOekakiCanvas {
       this._diameter = MAX_BRUSH_SIZE;
     }
     console.log('brush size changed to', this._diameter);
+    if (this._onBrushSizeChange) this._onBrushSizeChange(this._diameter);
+  }
 
-    if (this._onBrushSizeChange) {
-      this._onBrushSizeChange(this._diameter);
-    }
+  getLayerColor(id) {
+    return this._layerColors[id];
+  }
+
+  setLayerColor(id, colors) {
+    this._layerColors[id] = colors;
+    if (this._onLayerColorChange) this._onLayerColorChange(id, colors);
   }
 
   paintLine(x0, y0, x1, y1) {
@@ -187,17 +198,13 @@ class SimpleOekakiCanvas {
     return shaderProgram;
   }
   _initShaders() {
-    const canvasVShader = fs.readFileSync('./src/glsl/canvas.vsh', 'utf8');
-    const canvasFShader = fs.readFileSync('./src/glsl/canvas.fsh', 'utf8');
-    this._canvasShaderProgram = this._initShaderProgram(canvasFShader, canvasVShader);
+    this._canvasShaderProgram = this._initShaderProgram(CANVAS_F_SHADER, CANVAS_V_SHADER);
     this._fragmentBackgroundColorUniform = this._gl.getUniformLocation(this._canvasShaderProgram, 'backgroundColor');
     this._fragmentLayerOrderUniform = this._gl.getUniformLocation(this._canvasShaderProgram, 'layerOrder');
     this._fragmentLayerColorsUniform = this._gl.getUniformLocation(this._canvasShaderProgram, 'layerColors');
     this._fragmentLayerVisibilityUniform = this._gl.getUniformLocation(this._canvasShaderProgram, 'layerVisibility');
 
-    const layerVShader = fs.readFileSync('./src/glsl/layer.vsh', 'utf8');
-    const layerFShader = fs.readFileSync('./src/glsl/layer.fsh', 'utf8');
-    this._layerShaderProgram = this._initShaderProgram(layerFShader, layerVShader);
+    this._layerShaderProgram = this._initShaderProgram(LAYER_F_SHADER, LAYER_V_SHADER);
     this._fragmentLineUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'line');
     this._fragmentSizeUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'size');
   }

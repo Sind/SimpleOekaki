@@ -1,10 +1,11 @@
 
 
 // const fs = require('fs');
-// const iro = require('iro');
+import iro from 'iro.js';
+import Sortable from 'sortablejs';
+
 const SimpleOekakiCanvas = require('./SimpleOekakiCanvas.js');
 const utils = require('./utils.js');
-const Sortable = require('../../node_modules/sortablejs/Sortable.min.js');
 
 class SimpleOekaki extends SimpleOekakiCanvas {
   constructor(div) {
@@ -169,6 +170,11 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     this._colorMenuCloseButton.classList.add('option');
     this._colorMenuCloseButton.innerHTML = 'close';
 
+    const colorPickerHolder = document.createElement('div');
+    colorPickerHolder.classList.add('color-wheel-holder');
+    colorPickerHolder.id = 'color-wheel-holder';
+
+
     div.appendChild(maindiv);
     maindiv.appendChild(optionsholder);
     optionsholder.appendChild(toprow);
@@ -193,6 +199,8 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     this._colorMenu.appendChild(colorMenuOptionsHolder);
     colorMenuOptionsHolder.appendChild(colorMenuOptionsRow);
     colorMenuOptionsRow.appendChild(this._colorMenuCloseButton);
+    this._colorMenu.appendChild(colorPickerHolder);
+    this._colorPicker = new iro.ColorPicker('#color-wheel-holder');
 
     this._setHTMLInputCallbacks();
   }

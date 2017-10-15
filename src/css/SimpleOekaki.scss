@@ -114,8 +114,11 @@ $so-color-menu-height: 200px !default;
 		&.hidden {
 			margin-bottom: -$so-color-menu-height;
 		}
-		.colorWheelHolder{
+		.color-wheel-holder{
 			display: flex;
+			flex-grow: 1;
+			flex-direction: row;
+			justify-content: center;
 		}
 	}
 
