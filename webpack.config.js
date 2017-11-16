@@ -40,7 +40,7 @@ module.exports = function (env) {
             loader: "babel-loader",
             options: {
               // "babelrc": true,
-              "presets": ["es2015", "stage-2"]
+              "presets": ["env", "stage-2"]
             }
           }
         },
