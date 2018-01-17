@@ -44,12 +44,24 @@ class SimpleOekakiCanvas {
     }
     this._setInputCallbacks();
   }
+
   get backgroundColor() {
     return this._backgroundColor;
   }
-  set backgroundColor(colorArray) {
-    this._backgroundColor = colorArray;
+
+  set backgroundColor(color) {
+    // console.log(color)
+    this._backgroundColor = color;
+    if (this._onBackgroundColorChange) this._onBackgroundColorChange(color);
     // console.log('backgroundColor set:', this.backgroundColor);
+  }
+
+  get layerOrder() {
+    return this._layerOrder;
+  }
+
+  set layerOrder(order) {
+    this._layerOrder = order;
   }
 
   get currentLayer() {
@@ -85,9 +97,14 @@ class SimpleOekakiCanvas {
     return this._layerColors[id];
   }
 
-  setLayerColor(id, colors) {
-    this._layerColors[id] = colors;
-    if (this._onLayerColorChange) this._onLayerColorChange(id, colors);
+  setLayerColor(id, color) {
+    // console.log(id)
+    if (id === -1) {
+      this.backgroundColor = color;
+    } else {
+      this._layerColors[id] = color;
+      if (this._onLayerColorChange) this._onLayerColorChange(id, color);
+    }
   }
 
   paintLine(x0, y0, x1, y1) {
@@ -100,6 +117,13 @@ class SimpleOekakiCanvas {
       (800 - Math.round(y1)) + 0.5,
     );
     this._gl.uniform1f(this._fragmentSizeUniform, this._diameter);
+    this._gl.blendColor(
+      (this._currentLayer === 0 ? 1 : 0),
+      (this._currentLayer === 1 ? 1 : 0),
+      (this._currentLayer === 2 ? 1 : 0),
+      1,
+    );
+    this._gl.blendFunc(this._gl.CONSTANT_COLOR, this._gl.ONE_MINUS_CONSTANT_COLOR);
     this._gl.drawArrays(this._gl.TRIANGLE_STRIP, 0, 4);
   }
   paintGL() {
@@ -120,6 +144,7 @@ class SimpleOekakiCanvas {
       false,
       this._layerColors[0].concat(this._layerColors[1], this._layerColors[2]),
     );
+    this._gl.blendFunc(this._gl.ONE, this._gl.ZERO);
     this._gl.drawArrays(this._gl.TRIANGLE_STRIP, 0, 4);
   }
 
@@ -145,6 +170,8 @@ class SimpleOekakiCanvas {
     ]), this._gl.STATIC_DRAW);
     this._gl.vertexAttribPointer(this._vertexPositionAttribute2, 2, this._gl.FLOAT, false, 0, 0);
     this._gl.vertexAttribPointer(this._vertexPositionAttribute, 2, this._gl.FLOAT, false, 0, 0);
+
+    this._gl.enable(this._gl.BLEND);
 
     this._canvasFBO = this._gl.createFramebuffer();
     this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, this._canvasFBO);

@@ -17,6 +17,7 @@ $so-color-menu-height: 400px !default;
 	.color-select{
 		border: 3px solid $so-hightlight-color;
 		height: 32px;
+		width: 80px;
 		border-radius: 10px;
 		box-sizing: border-box;
 	}
@@ -112,7 +113,8 @@ $so-color-menu-height: 400px !default;
 		width: 100%;
 		height: $so-color-menu-height;
 		transition: all 0.2s;
-		background: blue;
+		background: $so-foreground-color;
+		border-top: 4px dashed $so-background-color;
 		&.hidden {
 			margin-bottom: -$so-color-menu-height;
 		}

@@ -14,34 +14,34 @@ class SimpleOekaki extends SimpleOekakiCanvas {
       throw new Error('You must provide a div as input parameter.');
     }
     // html
+    /* Main DIV */
     const maindiv = document.createElement('div');
     div.appendChild(maindiv);
     maindiv.classList.add('SimpleOekaki');
     maindiv.setAttribute('oncontextmenu', 'return false;');
 
+
+    /* Options bar at the top */
     const optionsholder = document.createElement('div');
     maindiv.appendChild(optionsholder);
     optionsholder.classList.add('optionsholder');
 
+    /* Canvas holder */
     const canvasholder = document.createElement('div');
     canvasholder.classList.add('canvasholder');
     maindiv.appendChild(canvasholder);
 
+    /* First row of options */
     const toprow = document.createElement('div');
     toprow.classList.add('optionsrow');
     optionsholder.appendChild(toprow);
-    
+
+    /* Second row of options */
     const bottomrow = document.createElement('div');
     bottomrow.classList.add('optionsrow');
     optionsholder.appendChild(bottomrow);
-    
+
     super(canvasholder);
-    
-    this._incSizeButton = document.createElement('i');
-    toprow.appendChild(this._incSizeButton);
-    this._incSizeButton.classList.add('material-icons');
-    this._incSizeButton.classList.add('option');
-    this._incSizeButton.innerHTML = 'add';
 
     this._decSizeButton = document.createElement('i');
     toprow.appendChild(this._decSizeButton);
@@ -58,16 +58,17 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     this._sizeSlider.min = SimpleOekakiCanvas.MIN_BRUSH_SIZE;
     this._sizeSlider.max = SimpleOekakiCanvas.MAX_BRUSH_SIZE;
 
+    this._incSizeButton = document.createElement('i');
+    toprow.appendChild(this._incSizeButton);
+    this._incSizeButton.classList.add('material-icons');
+    this._incSizeButton.classList.add('option');
+    this._incSizeButton.innerHTML = 'add';
+
     this._layerMenuOpenButton = document.createElement('i');
     toprow.appendChild(this._layerMenuOpenButton);
     this._layerMenuOpenButton.classList.add('material-icons');
     this._layerMenuOpenButton.classList.add('option');
     this._layerMenuOpenButton.innerHTML = 'layers';
-
-    this._backgroundColorSelector = document.createElement('input');
-    toprow.appendChild(this._backgroundColorSelector);
-    this._backgroundColorSelector.setAttribute('type', 'color');
-    this._backgroundColorSelector.setAttribute('value', utils.RGBtoHTML(this.backgroundColor));
 
     this._invisibleLayerMenuOverlay = document.createElement('div');
     maindiv.appendChild(this._invisibleLayerMenuOverlay);
@@ -104,6 +105,7 @@ class SimpleOekaki extends SimpleOekakiCanvas {
       document.createElement('div'),
       document.createElement('div'),
     ];
+    this._layersColorSelect = [];
 
     this._layers.forEach((layer, index) => {
       this._layerList.appendChild(layer);
@@ -128,21 +130,19 @@ class SimpleOekaki extends SimpleOekakiCanvas {
       layer.appendChild(options);
       options.classList.add('optionsrow');
 
-      const visibilityButton = document.createElement('i');
-      options.appendChild(visibilityButton);
-      visibilityButton.classList.add('material-icons');
-      visibilityButton.classList.add('option');
-      visibilityButton.innerHTML = 'visibility';
+      // const visibilityButton = document.createElement('i');
+      // options.appendChild(visibilityButton);
+      // visibilityButton.classList.add('material-icons');
+      // visibilityButton.classList.add('option');
+      // visibilityButton.innerHTML = 'visibility';
 
-      const colorSelect = document.createElement('div');
-      options.appendChild(colorSelect);
-      colorSelect.classList.add('color-select');
-      colorSelect.classList.add('option');
-      colorSelect.classList.add('grow');
-
+      this._layersColorSelect[2 - index] = document.createElement('div');
+      options.appendChild(this._layersColorSelect[2 - index]);
+      this._layersColorSelect[2 - index].classList.add('color-select');
+      this._layersColorSelect[2 - index].classList.add('option');
+      this._layersColorSelect[2 - index].classList.add('grow');
+      this._layersColorSelect[2 - index].style.backgroundColor = 'rgb(0,0,0)';
     });
-
-    Sortable.create(this._layerList);
 
     this._backgroundLayer = document.createElement('div');
     this._layerMenu.appendChild(this._backgroundLayer);
@@ -165,12 +165,12 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     this._backgroundLayer.appendChild(options);
     options.classList.add('optionsrow');
 
-    const colorSelect = document.createElement('div');
-    options.appendChild(colorSelect);
-    colorSelect.classList.add('color-select');
-    colorSelect.classList.add('option');
-    colorSelect.classList.add('grow');
-
+    this._backgroundColorSelect = document.createElement('div');
+    options.appendChild(this._backgroundColorSelect);
+    this._backgroundColorSelect.classList.add('color-select');
+    this._backgroundColorSelect.classList.add('option');
+    this._backgroundColorSelect.classList.add('grow');
+    this._backgroundColorSelect.style.backgroundColor = 'rgb(255,255,255)';
 
     this._invisibleColorMenuOverlay = document.createElement('div');
     maindiv.appendChild(this._invisibleColorMenuOverlay);
@@ -218,12 +218,22 @@ class SimpleOekaki extends SimpleOekakiCanvas {
 
   _onCurrentLayerChange(id) {
     this._layers.forEach((layer) => {
-      if (id === layer.getAttribute('data-layer-id')) {
+      if (id === parseInt(layer.getAttribute('data-layer-id'), 10)) {
         layer.classList.add('selected');
       } else {
         layer.classList.remove('selected');
       }
     });
+  }
+
+  _onBackgroundColorChange(color) {
+    const colorString = `rgb(${color[0] * 255},${color[1] * 255},${color[2] * 255})`;
+    this._backgroundColorSelect.style.backgroundColor = colorString;
+  }
+
+  _onLayerColorChange(id, color) {
+    const colorString = `rgb(${color[0] * 255},${color[1] * 255},${color[2] * 255})`;
+    this._layersColorSelect[id].style.backgroundColor = colorString;
   }
 
   _setHTMLInputCallbacks() {
@@ -235,9 +245,6 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     });
     this._sizeSlider.addEventListener('change', () => {
       this.brushSize = parseInt(this._sizeSlider.value, 10);
-    });
-    this._backgroundColorSelector.addEventListener('input', () => {
-      this.backgroundColor = utils.HTMLtoRGB(this._backgroundColorSelector.value);
     });
     this._layerMenuOpenButton.addEventListener('click', () => {
       this.openLayerMenu();
@@ -255,13 +262,32 @@ class SimpleOekaki extends SimpleOekakiCanvas {
       this.closeColorMenu();
     });
 
+    Sortable.create(this._layerList, {
+      onUpdate: (event) => {
+        // console.log(event.to)
+        // console.log(Array.prototype.map.call(event.to.children, (el) => { return el.getAttribute('data-layer-id'); }));
+        this.layerOrder = Array.prototype.map.call(event.to.children, el => el.getAttribute('data-layer-id')).reverse();
+      },
+    });
+
     Array.prototype.forEach.call(document.getElementsByClassName('layer-selector'), (text) => {
-      const id = text.parentNode.getAttribute('data-layer-id');
+      const id = parseInt(text.parentNode.getAttribute('data-layer-id'), 10);
       if (id === -1) return;
       text.addEventListener('click', () => {
         this.currentLayer = id;
-      });
+      }, this);
     });
+
+    Array.prototype.forEach.call(document.getElementsByClassName('color-select'), (colorfield) => {
+      const id = parseInt(colorfield.parentNode.parentNode.getAttribute('data-layer-id'), 10);
+      colorfield.addEventListener('click', () => {
+        this.openColorMenu();
+        this._colorPicker.off('color:change');
+        this._colorPicker.on('color:change', (color) => {
+          this.setLayerColor(id, [color.rgb.r / 255, color.rgb.g / 255, color.rgb.b / 255]);
+        });
+      });
+    }, this);
   }
   openLayerMenu() {
     this._layerMenu.classList.remove('hidden');
