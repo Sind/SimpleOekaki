@@ -8,7 +8,7 @@ import LAYER_F_SHADER from '../glsl/layer.fsh';
 const VERSION = '0.2.1';
 const MIN_BRUSH_SIZE = 1;
 const MAX_BRUSH_SIZE = 31;
-const DEFAULT_BRUSH_SIZE = 1;
+const DEFAULT_BRUSH_SIZE = 3;
 
 const DEFAULT_BACKGROUND_COLOR = [1, 1, 1];
 const DEFAULT_LAYER_COLOR = [0, 0, 0];
@@ -116,7 +116,19 @@ class SimpleOekakiCanvas {
       Math.round(x1) + 0.5,
       (800 - Math.round(y1)) + 0.5,
     );
-    this._gl.uniform1f(this._fragmentSizeUniform, this._diameter);
+
+    const size = [
+      0.1 + (2 * ((Math.abs(x0 - x1) + (2 * this._diameter)) / this._canvas.width)),
+      0.1 + (2 * ((Math.abs(y0 - y1) + (2 * this._diameter)) / this._canvas.height)),
+    ];
+    const offset = [
+      (((x0 + x1) / 2 / this._canvas.width) * 2) - 1,
+      ((1 - ((y0 + y1) / 2 / this._canvas.height)) * 2) - 1,
+    ];
+    this._gl.uniform1f(this._fragmentThicknessUniform, this._diameter);
+    this._gl.uniform2f(this._fragmentSizeUniform, size[0], size[1]);
+    this._gl.uniform2f(this._fragmentOffsetUniform, offset[0], offset[1]);
+
     this._gl.blendColor(
       (this._currentLayer === 0 ? 1 : 0),
       (this._currentLayer === 1 ? 1 : 0),
@@ -233,6 +245,8 @@ class SimpleOekakiCanvas {
 
     this._layerShaderProgram = this._initShaderProgram(LAYER_F_SHADER, LAYER_V_SHADER);
     this._fragmentLineUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'line');
+    this._fragmentThicknessUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'thickness');
+    this._fragmentOffsetUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'offset');
     this._fragmentSizeUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'size');
   }
   _setInputCallbacks() {

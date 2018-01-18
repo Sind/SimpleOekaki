@@ -1,7 +1,7 @@
 precision mediump float;
 
 uniform vec4 line;
-uniform float size;
+uniform float thickness;
 
 void main(void){
   float x = gl_FragCoord.x;
@@ -40,7 +40,7 @@ void main(void){
   }
   float d = distance(vec2(x,y),vec2(xx,yy));
 
-  if(d > size/2.0) discard;
+  if(d > thickness/2.0) discard;
 
   gl_FragColor = vec4(1.0,1.0,1.0,1.0);
 }
