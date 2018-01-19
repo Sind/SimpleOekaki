@@ -13,13 +13,13 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     if (div == null || div.tagName !== 'DIV') {
       throw new Error('You must provide a div as input parameter.');
     }
-    // html
+
+    /* HTML */
     /* Main DIV */
     const maindiv = document.createElement('div');
     div.appendChild(maindiv);
     maindiv.classList.add('SimpleOekaki');
     maindiv.setAttribute('oncontextmenu', 'return false;');
-
 
     /* Options bar at the top */
     const optionsholder = document.createElement('div');
@@ -31,6 +31,8 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     canvasholder.classList.add('canvasholder');
     maindiv.appendChild(canvasholder);
 
+    super(canvasholder);
+
     /* First row of options */
     const toprow = document.createElement('div');
     toprow.classList.add('optionsrow');
@@ -41,7 +43,6 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     bottomrow.classList.add('optionsrow');
     optionsholder.appendChild(bottomrow);
 
-    super(canvasholder);
 
     this._decSizeButton = document.createElement('i');
     toprow.appendChild(this._decSizeButton);
@@ -284,8 +285,9 @@ class SimpleOekaki extends SimpleOekakiCanvas {
         this.openColorMenu();
         this._colorPicker.off('color:change');
         this._colorPicker.on('color:change', (color) => {
-          this.setLayerColor(id, [color.rgb.r / 255, color.rgb.g / 255, color.rgb.b / 255]);
+          this.setLayerColor(id, utils.iRGBtoRGB(color.rgb));
         });
+        this._colorPicker.color.rgb = utils.RGBtoiRGB(this.getLayerColor(id));
       });
     }, this);
   }

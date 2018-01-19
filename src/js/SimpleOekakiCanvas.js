@@ -5,7 +5,7 @@ import CANVAS_F_SHADER from '../glsl/canvas.fsh';
 import LAYER_V_SHADER from '../glsl/layer.vsh';
 import LAYER_F_SHADER from '../glsl/layer.fsh';
 
-const VERSION = '0.2.1';
+const VERSION = '0.4.1';
 const MIN_BRUSH_SIZE = 1;
 const MAX_BRUSH_SIZE = 31;
 const DEFAULT_BRUSH_SIZE = 3;
@@ -94,6 +94,9 @@ class SimpleOekakiCanvas {
   }
 
   getLayerColor(id) {
+    if (id === -1) {
+      return this.backgroundColor;
+    }
     return this._layerColors[id];
   }
 

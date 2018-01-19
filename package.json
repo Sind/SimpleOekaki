@@ -1,6 +1,6 @@
 {
   "name": "SimpleOekaki",
-  "version": "1.0.0",
+  "version": "0.4.1",
   "description": "Simple art program for web",
   "main": "src/SimpleOekaki.js",
   "repository": "https://github.com/Sind/SimpleOekaki.git",
