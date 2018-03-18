@@ -5,6 +5,18 @@ import CANVAS_F_SHADER from '../glsl/canvas.fsh';
 import LAYER_V_SHADER from '../glsl/layer.vsh';
 import LAYER_F_SHADER from '../glsl/layer.fsh';
 
+import PATTERN0 from '../png/0.png';
+import PATTERN1 from '../png/1.png';
+import PATTERN2 from '../png/2.png';
+import PATTERN3 from '../png/3.png';
+import PATTERN4 from '../png/4.png';
+import PATTERN5 from '../png/5.png';
+import PATTERN6 from '../png/6.png';
+import PATTERN7 from '../png/7.png';
+import PATTERN8 from '../png/8.png';
+import PATTERN9 from '../png/9.png';
+import PATTERN10 from '../png/10.png';
+
 const VERSION = '0.4.1';
 const MIN_BRUSH_SIZE = 1;
 const MAX_BRUSH_SIZE = 31;
@@ -13,6 +25,19 @@ const DEFAULT_BRUSH_SIZE = 3;
 const DEFAULT_BACKGROUND_COLOR = [1, 1, 1];
 const DEFAULT_LAYER_COLOR = [0, 0, 0];
 
+const PATTERNS = [
+  PATTERN0,
+  PATTERN1,
+  PATTERN2,
+  PATTERN3,
+  PATTERN4,
+  PATTERN5,
+  PATTERN6,
+  PATTERN7,
+  PATTERN8,
+  PATTERN9,
+  PATTERN10,
+];
 class SimpleOekakiCanvas {
   // Constants
   static get VERSION() { return VERSION; }
@@ -21,7 +46,9 @@ class SimpleOekakiCanvas {
   static get DEFAULT_BRUSH_SIZE() { return DEFAULT_BRUSH_SIZE; }
   static get DEFAULT_BACKGROUND_COLOR() { return DEFAULT_BACKGROUND_COLOR; }
   static get DEFAULT_LAYER_COLOR() { return DEFAULT_LAYER_COLOR; }
-
+  static get PATTERNS() { return PATTERNS; }
+  static get NUM_PATTERNS() { return PATTERNS.size; }
+  static GET_PATTERN(i) { return PATTERNS[i]; }
   constructor(div) {
     // Drawing state
     this._diameter = DEFAULT_BRUSH_SIZE;
@@ -30,6 +57,7 @@ class SimpleOekakiCanvas {
     this._layerOrder = [0, 1, 2];
     this._layerColors = [DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR];
     this._layerVisibility = [1, 1, 1];
+    this._currentPattern = 6;
 
     this._canvas = document.createElement('canvas');
     this._canvas.height = 800;
@@ -76,6 +104,16 @@ class SimpleOekakiCanvas {
     }
   }
 
+  set currentPattern(id) {
+    this._currentPattern = Math.min(PATTERNS.size(), Math.max(0, id));
+
+    if (this._onCurrentPatternChange) this._onCurrentPatternChange(id);
+  }
+
+  get currentPattern() {
+    return this._currentPattern;
+  }
+
   get brushSize() {
     return this._diameter;
   }
@@ -111,15 +149,22 @@ class SimpleOekakiCanvas {
   }
 
   paintLine(x0, y0, x1, y1) {
-    this._gl.useProgram(this._layerShaderProgram);
-    this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, this._canvasFBO);
-    this._gl.uniform4f(
-      this._fragmentLineUniform, Math.round(x0) + 0.5,
-      (800 - Math.round(y0)) + 0.5,
-      Math.round(x1) + 0.5,
-      (800 - Math.round(y1)) + 0.5,
+    console.log(x0, x1, y0, y1);
+    const gl = this._gl;
+    gl.useProgram(this._layerShaderProgram);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this._canvasFBO);
+    gl.uniform4f(
+      this._fragmentLineUniform, x0 - 0.5,
+      (800 - y0) + 0.5,
+      x1 - 0.5,
+      (800 - y1) + 0.5,
     );
-
+    console.log([
+      x0 - 0.5,
+      (800 - y0) + 0.5,
+      x1 - 0.5,
+      (800 - y1) + 0.5,
+    ]);
     const size = [
       0.1 + (2 * ((Math.abs(x0 - x1) + (2 * this._diameter)) / this._canvas.width)),
       0.1 + (2 * ((Math.abs(y0 - y1) + (2 * this._diameter)) / this._canvas.height)),
@@ -128,129 +173,177 @@ class SimpleOekakiCanvas {
       (((x0 + x1) / 2 / this._canvas.width) * 2) - 1,
       ((1 - ((y0 + y1) / 2 / this._canvas.height)) * 2) - 1,
     ];
-    this._gl.uniform1f(this._fragmentThicknessUniform, this._diameter);
-    this._gl.uniform2f(this._fragmentSizeUniform, size[0], size[1]);
-    this._gl.uniform2f(this._fragmentOffsetUniform, offset[0], offset[1]);
-
-    this._gl.blendColor(
+    gl.uniform1f(this._fragmentThicknessUniform, this._diameter);
+    gl.uniform2f(this._fragmentSizeUniform, size[0], size[1]);
+    gl.uniform2f(this._fragmentOffsetUniform, offset[0], offset[1]);
+    gl.activeTexture(gl.TEXTURE0 + 1);
+    // gl.bindTexture(gl.TEXTURE_2D, this._textures[this._currentPattern]);
+    // gl.uniform1i(this._fragmentPatternUniform, 1);
+    gl.blendColor(
       (this._currentLayer === 0 ? 1 : 0),
       (this._currentLayer === 1 ? 1 : 0),
       (this._currentLayer === 2 ? 1 : 0),
       1,
     );
-    this._gl.blendFunc(this._gl.CONSTANT_COLOR, this._gl.ONE_MINUS_CONSTANT_COLOR);
-    this._gl.drawArrays(this._gl.TRIANGLE_STRIP, 0, 4);
+    gl.blendFunc(gl.CONSTANT_COLOR, gl.ONE_MINUS_CONSTANT_COLOR);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
   paintGL() {
-    this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, null);
-    this._gl.useProgram(this._canvasShaderProgram);
-    this._gl.clearColor(
+    const gl = this._gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(this._canvasShaderProgram);
+    gl.clearColor(
       this._backgroundColor[0],
       this._backgroundColor[1],
       this._backgroundColor[2],
       1.0,
     );
-    this._gl.clear(this._gl.COLOR_BUFFER_BIT);
-    this._gl.uniform3fv(this._fragmentBackgroundColorUniform, this._backgroundColor);
-    this._gl.uniform3iv(this._fragmentLayerOrderUniform, this._layerOrder);
-    this._gl.uniform3fv(this._fragmentLayerVisibilityUniform, this._layerVisibility);
-    this._gl.uniformMatrix3fv(
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform3fv(this._fragmentBackgroundColorUniform, this._backgroundColor);
+    gl.uniform3iv(this._fragmentLayerOrderUniform, this._layerOrder);
+    gl.uniform3fv(this._fragmentLayerVisibilityUniform, this._layerVisibility);
+    gl.uniformMatrix3fv(
       this._fragmentLayerColorsUniform,
       false,
       this._layerColors[0].concat(this._layerColors[1], this._layerColors[2]),
     );
-    this._gl.blendFunc(this._gl.ONE, this._gl.ZERO);
-    this._gl.drawArrays(this._gl.TRIANGLE_STRIP, 0, 4);
+    gl.blendFunc(gl.ONE, gl.ZERO);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
   _getShader(str, type) {
-    const shader = this._gl.createShader(type);
-    this._gl.shaderSource(shader, str);
-    this._gl.compileShader(shader);
-    if (!this._gl.getShaderParameter(shader, this._gl.COMPILE_STATUS)) {
+    const gl = this._gl;
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, str);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       // console.log('JS:Shader compile failed');
-      // console.log(this._gl.getShaderInfoLog(shader));
+      // console.log(gl.getShaderInfoLog(shader));
       return null;
     }
     return shader;
   }
+  _loadTexture(url) {
+    const gl = this._gl;
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    // Because images have to be download over the internet
+    // they might take a moment until they are ready.
+    // Until then put a single pixel in the texture so we can
+    // use it immediately. When the image has finished downloading
+    // we'll update the texture with the contents of the image.
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const width = 1;
+    const height = 1;
+    const border = 0;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 0, 0]);
+    gl.texImage2D(
+      gl.TEXTURE_2D, level, internalFormat,
+      width, height, border, srcFormat, srcType,
+      pixel,
+    );
+    const image = new Image();
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(
+        gl.TEXTURE_2D, level, internalFormat,
+        srcFormat, srcType, image,
+      );
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    };
+    console.log("generating texture " + texture + " from " + url)
+    image.src = url;
+    return texture;
+  }
   _initBuffers() {
-    const canvasBuffer = this._gl.createBuffer();
-    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, canvasBuffer);
-    this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array([
+    const gl = this._gl;
+    const canvasBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, canvasBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
       -1, -1,
       1, -1,
       -1, 1,
       1, 1,
-    ]), this._gl.STATIC_DRAW);
-    this._gl.vertexAttribPointer(this._vertexPositionAttribute2, 2, this._gl.FLOAT, false, 0, 0);
-    this._gl.vertexAttribPointer(this._vertexPositionAttribute, 2, this._gl.FLOAT, false, 0, 0);
+    ]), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(this._vertexPositionAttribute2, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(this._vertexPositionAttribute, 2, gl.FLOAT, false, 0, 0);
 
-    this._gl.enable(this._gl.BLEND);
+    gl.enable(gl.BLEND);
 
-    this._canvasFBO = this._gl.createFramebuffer();
-    this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, this._canvasFBO);
+    this._canvasFBO = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this._canvasFBO);
     this._canvasFBO.width = this._canvas.width;
     this._canvasFBO.height = this._canvas.height;
+    // this._textures = PATTERNS.map(pattern => this._loadTexture(pattern));
 
-    this._canvasTexture = this._gl.createTexture();
-    this._gl.bindTexture(this._gl.TEXTURE_2D, this._canvasTexture);
-    this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MAG_FILTER, this._gl.NEAREST);
-    this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MIN_FILTER, this._gl.NEAREST);
-    this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_WRAP_S, this._gl.CLAMP_TO_EDGE);
-    this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_WRAP_T, this._gl.CLAMP_TO_EDGE);
-    this._gl.texImage2D(
-      this._gl.TEXTURE_2D,
+    this._canvasTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this._canvasTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
       0,
-      this._gl.RGBA,
+      gl.RGBA,
       this._canvasFBO.width,
       this._canvasFBO.height,
       0,
-      this._gl.RGBA,
-      this._gl.UNSIGNED_BYTE,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
       null,
     );
-    this._gl.framebufferTexture2D(
-      this._gl.FRAMEBUFFER,
-      this._gl.COLOR_ATTACHMENT0,
-      this._gl.TEXTURE_2D,
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
       this._canvasTexture,
       0,
     );
 
-    this._gl.clearColor(0, 0, 0, 1);
-    this._gl.clear(this._gl.COLOR_BUFFER_BIT);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
-    this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
   _initShaderProgram(fsh, vsh) {
-    const vertexShader = this._getShader(vsh, this._gl.VERTEX_SHADER);
-    const fragmentShader = this._getShader(fsh, this._gl.FRAGMENT_SHADER);
-    const shaderProgram = this._gl.createProgram();
-    this._gl.attachShader(shaderProgram, vertexShader);
-    this._gl.attachShader(shaderProgram, fragmentShader);
-    this._gl.linkProgram(shaderProgram);
-    if (!this._gl.getProgramParameter(shaderProgram, this._gl.LINK_STATUS)) {
+    const gl = this._gl;
+    const vertexShader = this._getShader(vsh, gl.VERTEX_SHADER);
+    const fragmentShader = this._getShader(fsh, gl.FRAGMENT_SHADER);
+    const shaderProgram = gl.createProgram();
+    gl.attachShader(shaderProgram, vertexShader);
+    gl.attachShader(shaderProgram, fragmentShader);
+    gl.linkProgram(shaderProgram);
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
       // console.log('Could not initialise shaders');
-      // console.log(this._gl.getProgramInfoLog(shaderProgram));
+      // console.log(gl.getProgramInfoLog(shaderProgram));
     }
-    this._gl.useProgram(shaderProgram);
-    const VertexPositionAttribute = this._gl.getAttribLocation(shaderProgram, 'position');
-    this._gl.enableVertexAttribArray(VertexPositionAttribute);
+    gl.useProgram(shaderProgram);
+    const VertexPositionAttribute = gl.getAttribLocation(shaderProgram, 'position');
+    gl.enableVertexAttribArray(VertexPositionAttribute);
     return shaderProgram;
   }
   _initShaders() {
+    const gl = this._gl;
     this._canvasShaderProgram = this._initShaderProgram(CANVAS_F_SHADER, CANVAS_V_SHADER);
-    this._fragmentBackgroundColorUniform = this._gl.getUniformLocation(this._canvasShaderProgram, 'backgroundColor');
-    this._fragmentLayerOrderUniform = this._gl.getUniformLocation(this._canvasShaderProgram, 'layerOrder');
-    this._fragmentLayerColorsUniform = this._gl.getUniformLocation(this._canvasShaderProgram, 'layerColors');
-    this._fragmentLayerVisibilityUniform = this._gl.getUniformLocation(this._canvasShaderProgram, 'layerVisibility');
+    this._fragmentBackgroundColorUniform = gl.getUniformLocation(this._canvasShaderProgram, 'backgroundColor');
+    this._fragmentLayerOrderUniform = gl.getUniformLocation(this._canvasShaderProgram, 'layerOrder');
+    this._fragmentLayerColorsUniform = gl.getUniformLocation(this._canvasShaderProgram, 'layerColors');
+    this._fragmentLayerVisibilityUniform = gl.getUniformLocation(this._canvasShaderProgram, 'layerVisibility');
 
     this._layerShaderProgram = this._initShaderProgram(LAYER_F_SHADER, LAYER_V_SHADER);
-    this._fragmentLineUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'line');
-    this._fragmentThicknessUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'thickness');
-    this._fragmentOffsetUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'offset');
-    this._fragmentSizeUniform = this._gl.getUniformLocation(this._layerShaderProgram, 'size');
+    this._fragmentLineUniform = gl.getUniformLocation(this._layerShaderProgram, 'line');
+    this._fragmentThicknessUniform = gl.getUniformLocation(this._layerShaderProgram, 'thickness');
+    this._fragmentOffsetUniform = gl.getUniformLocation(this._layerShaderProgram, 'offset');
+    this._fragmentSizeUniform = gl.getUniformLocation(this._layerShaderProgram, 'size');
+    // this._fragmentPatternUniform = gl.getUniformLocation(this._layerShaderProgram, 'pattern');
   }
   _setInputCallbacks() {
     let isDown;

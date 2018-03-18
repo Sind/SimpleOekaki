@@ -16,7 +16,7 @@ void main(void){
   for(int i = 0; i < 3; i++){
     int currentLayer = layerOrder[i];
 
-  if(currentLayer == 0){
+    if(currentLayer == 0){
       vec3 currentColor = layerColors[0];
       float currentSet = texColor[0];
       currentSet = currentSet * layerVisibility[0];
