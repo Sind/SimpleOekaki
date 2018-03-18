@@ -177,8 +177,8 @@ class SimpleOekakiCanvas {
     gl.uniform2f(this._fragmentSizeUniform, size[0], size[1]);
     gl.uniform2f(this._fragmentOffsetUniform, offset[0], offset[1]);
     gl.activeTexture(gl.TEXTURE0 + 1);
-    // gl.bindTexture(gl.TEXTURE_2D, this._textures[this._currentPattern]);
-    // gl.uniform1i(this._fragmentPatternUniform, 1);
+    gl.bindTexture(gl.TEXTURE_2D, this._textures[this._currentPattern]);
+    gl.uniform1i(this._fragmentPatternUniform, 1);
     gl.blendColor(
       (this._currentLayer === 0 ? 1 : 0),
       (this._currentLayer === 1 ? 1 : 0),
@@ -281,7 +281,7 @@ class SimpleOekakiCanvas {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this._canvasFBO);
     this._canvasFBO.width = this._canvas.width;
     this._canvasFBO.height = this._canvas.height;
-    // this._textures = PATTERNS.map(pattern => this._loadTexture(pattern));
+    this._textures = PATTERNS.map(pattern => this._loadTexture(pattern));
 
     this._canvasTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this._canvasTexture);
@@ -343,7 +343,7 @@ class SimpleOekakiCanvas {
     this._fragmentThicknessUniform = gl.getUniformLocation(this._layerShaderProgram, 'thickness');
     this._fragmentOffsetUniform = gl.getUniformLocation(this._layerShaderProgram, 'offset');
     this._fragmentSizeUniform = gl.getUniformLocation(this._layerShaderProgram, 'size');
-    // this._fragmentPatternUniform = gl.getUniformLocation(this._layerShaderProgram, 'pattern');
+    this._fragmentPatternUniform = gl.getUniformLocation(this._layerShaderProgram, 'pattern');
   }
   _setInputCallbacks() {
     let isDown;

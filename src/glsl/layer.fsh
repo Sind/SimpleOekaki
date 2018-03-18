@@ -3,7 +3,7 @@ precision mediump float;
 uniform vec4 line;
 uniform float thickness;
 
-//uniform sampler2D pattern;
+uniform sampler2D pattern;
 
 void main(void){
   float x = gl_FragCoord.x;
@@ -44,6 +44,6 @@ void main(void){
 
   if(d > thickness/2.0) discard;
 
-  //gl_FragColor = texture2D(pattern, gl_FragCoord.xy / 800.0);
-  gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+  gl_FragColor = texture2D(pattern, gl_FragCoord.xy / 800.0);
+  // gl_FragColor = vec4(1.0,1.0,1.0,1.0);
 }
