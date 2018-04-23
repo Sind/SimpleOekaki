@@ -57,7 +57,7 @@ class SimpleOekakiCanvas {
     this._layerOrder = [0, 1, 2];
     this._layerColors = [DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR, DEFAULT_LAYER_COLOR];
     this._layerVisibility = [1, 1, 1];
-    this._currentPattern = 6;
+    this._currentPattern = 0;
 
     this._canvas = document.createElement('canvas');
     this._canvas.height = 800;
