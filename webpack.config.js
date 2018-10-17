@@ -77,7 +77,7 @@ module.exports = function (env) {
     devtool: "source-map",
     devServer: {
       port: process.env.PORT || 8080,
-      host: "localhost",
+      host: "0.0.0.0",
       publicPath: "http://localhost:3000/",
       contentBase: path.join(__dirname, "./"),
       watchContentBase: false,
