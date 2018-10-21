@@ -1,8 +1,7 @@
 
 
 // const fs = require('fs');
-import ColorPicker from 'iro.js/src/modules/colorPicker';
-import Sortable from 'sortablejs';
+import iro from '@jaames/iro';
 import '../css/SimpleOekaki.scss';
 
 const SimpleOekakiCanvas = require('./SimpleOekakiCanvas.js');
@@ -245,7 +244,7 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     colorPickerHolder.classList.add('color-wheel-holder');
     colorPickerHolder.id = 'color-wheel-holder';
 
-    this._colorPicker = new ColorPicker('#color-wheel-holder');
+    this._colorPicker = new iro.ColorPicker('#color-wheel-holder');
 
     this._setHTMLInputCallbacks();
   }
@@ -311,14 +310,6 @@ class SimpleOekaki extends SimpleOekakiCanvas {
     });
     this._invisibleColorMenuOverlay.addEventListener('click', () => {
       this.closeColorMenu();
-    });
-
-    Sortable.create(this._layerList, {
-      onUpdate: (event) => {
-        // console.log(event.to)
-        // console.log(Array.prototype.map.call(event.to.children, (el) => { return el.getAttribute('data-layer-id'); }));
-        this.layerOrder = Array.prototype.map.call(event.to.children, el => el.getAttribute('data-layer-id')).reverse();
-      },
     });
 
     this._patternButtons.forEach((patternButton, index) => {
